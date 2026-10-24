@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'wouter';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
+import { formatPrice, getCurrentSeason, SEASONAL_MENU, SEASONS, type MenuSeason } from '@/lib/order-catalog';
 import heroImage from '@assets/lunar_og.jpg';
 import imgKouignTray from '@assets/lunar_kouign_tray.jpg';
 import imgNatasKouigns from '@assets/lunar_natas_kouigns.jpg';
@@ -9,54 +11,45 @@ import imgKouignGold from '@assets/lunar_kouign_gold.jpg';
 import imgGiftBox from '@assets/lunar_gift_box.jpg';
 import imgAfternoonTea from '@assets/lunar_afternoon_tea.jpg';
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.12 } }
 };
 
-type Season = 'spring' | 'summer' | 'fall' | 'winter';
-
-const SEASONS: { key: Season; label: string }[] = [
-  { key: 'spring', label: 'Spring' },
-  { key: 'summer', label: 'Summer' },
-  { key: 'fall', label: 'Fall' },
-  { key: 'winter', label: 'Winter' },
-];
-
-const MENU: Record<Season, { name: string; price: string; img: string }[]> = {
+const MENU_IMAGES: Record<MenuSeason, string[]> = {
   spring: [
-    { name: 'Strawberry Mochi Tart', price: '$7', img: imgGiftBox },
-    { name: 'Matcha Croissant', price: '$6', img: imgNatasKouigns },
-    { name: 'Cherry Blossom Financier', price: '$5', img: imgKouignTray },
-    { name: 'Earl Grey Kouign-Amann', price: '$8', img: imgKouignGold },
+    imgGiftBox,
+    imgNatasKouigns,
+    imgKouignTray,
+    imgKouignGold,
   ],
   summer: [
-    { name: 'Pastel de Nata', price: '$6', img: heroImage },
-    { name: 'Kouign-Amann', price: '$7', img: imgKouignTray },
-    { name: 'Natas & Kouigns', price: '$6', img: imgNatasKouigns },
-    { name: 'Kouign with Gold', price: '$8', img: imgKouignGold },
+    heroImage,
+    imgKouignTray,
+    imgNatasKouigns,
+    imgKouignGold,
   ],
   fall: [
-    { name: 'Taro Puff', price: '$6', img: imgNatasKouigns },
-    { name: 'Osmanthus Madeleine', price: '$5', img: imgKouignGold },
-    { name: 'Chestnut Mont Blanc', price: '$9', img: imgGiftBox },
-    { name: 'Black Sesame Kouign-Amann', price: '$8', img: imgKouignTray },
+    imgNatasKouigns,
+    imgKouignGold,
+    imgGiftBox,
+    imgKouignTray,
   ],
   winter: [
-    { name: 'Tangerine Cake', price: '$7', img: imgGiftBox },
-    { name: 'Red Bean Danish', price: '$6', img: imgKouignTray },
-    { name: 'Longan Bun', price: '$5', img: imgNatasKouigns },
-    { name: 'Yuja Éclair', price: '$7', img: imgKouignGold },
+    imgGiftBox,
+    imgKouignTray,
+    imgNatasKouigns,
+    imgKouignGold,
   ],
 };
 
 export default function Home() {
-  const [activeSeason, setActiveSeason] = useState<Season>('summer');
+  const [activeSeason, setActiveSeason] = useState<MenuSeason>(getCurrentSeason);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-primary">
@@ -105,14 +98,12 @@ export default function Home() {
               variants={fadeInUp}
               className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
             >
-              <a
-                href="https://www.lunarbakery.com/s/order"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center bg-primary text-primary-foreground text-sm font-bold tracking-[0.15em] uppercase px-10 py-4 hover:bg-primary/90 transition-colors"
+              <Link
+                href="/order"
+                className="inline-flex items-center justify-center bg-primary text-primary-foreground text-sm font-bold px-10 py-4 hover:bg-primary/90 transition-colors"
               >
-                Order Cakes
-              </a>
+                Order for pickup
+              </Link>
               <button
                 onClick={() => {
                   document.querySelector('#menu')?.scrollIntoView({ behavior: 'smooth' });
@@ -184,16 +175,16 @@ export default function Home() {
               variants={staggerContainer}
               className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
             >
-              {MENU[activeSeason].map((item) => (
-                <motion.div key={item.name} variants={fadeInUp} className="group flex flex-col">
+              {SEASONAL_MENU[activeSeason].map((item, index) => (
+                <motion.div key={item.id} variants={fadeInUp} className="group flex flex-col">
                   <div className="relative overflow-hidden bg-muted aspect-square">
                     <img
-                      src={item.img}
+                      src={MENU_IMAGES[activeSeason][index]}
                       alt={item.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                     <span className="absolute bottom-3 right-3 bg-background text-primary text-xs font-bold tracking-wide px-2 py-1 border border-border/60">
-                      {item.price}
+                      {formatPrice(item.priceCents)}
                     </span>
                   </div>
                   <p className="mt-3 text-sm font-sans text-primary leading-snug">{item.name}</p>
@@ -202,14 +193,12 @@ export default function Home() {
             </motion.div>
 
             <div className="mt-10">
-              <a
-                href="https://www.lunarbakery.com/s/order"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-sm font-bold tracking-[0.15em] uppercase text-primary border border-primary px-8 py-3 hover:bg-primary hover:text-primary-foreground transition-colors"
+              <Link
+                href="/order"
+                className="inline-flex items-center text-sm font-bold text-primary border border-primary px-8 py-3 hover:bg-primary hover:text-primary-foreground transition-colors"
               >
-                View Full Menu & Pre-order
-              </a>
+                View full menu and pre-order
+              </Link>
             </div>
           </div>
         </section>
@@ -240,42 +229,15 @@ export default function Home() {
                 <p className="text-xs font-bold tracking-[0.2em] uppercase text-secondary mb-3">04</p>
                 <h2 className="font-serif text-3xl md:text-4xl mb-4">Order Cakes</h2>
                 <p className="text-primary/60 text-sm leading-relaxed mb-8 max-w-sm">
-                  Now accepting custom cake orders for October & November 2026. Fill out your details and we'll be in touch to discuss your order.
+                  Planning a celebration? Tell us what you have in mind and we’ll follow up about availability and pricing.
                 </p>
 
-                <form
-                  className="flex flex-col gap-0"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    window.open('https://www.lunarbakery.com/s/order', '_blank');
-                  }}
+                <Link
+                  href="/order?type=cake"
+                  className="inline-flex items-center justify-center bg-primary text-primary-foreground text-sm font-bold px-10 py-4 hover:bg-primary/90 transition-colors self-start"
                 >
-                  <div className="border border-border/60 px-4 py-3 focus-within:border-primary transition-colors">
-                    <input
-                      type="text"
-                      placeholder="Your name"
-                      required
-                      className="w-full bg-transparent text-primary text-sm font-sans outline-none placeholder:text-primary/40"
-                    />
-                  </div>
-                  <div className="border border-t-0 border-border/60 px-4 py-3 mb-6 focus-within:border-primary transition-colors">
-                    <input
-                      type="email"
-                      placeholder="Email address"
-                      required
-                      className="w-full bg-transparent text-primary text-sm font-sans outline-none placeholder:text-primary/40"
-                    />
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center justify-center bg-primary text-primary-foreground text-sm font-bold tracking-[0.15em] uppercase px-10 py-4 hover:bg-primary/90 transition-colors"
-                    >
-                      Order Cake
-                    </button>
-                  </div>
-                </form>
+                  Request a cake
+                </Link>
               </motion.div>
             </motion.div>
           </div>

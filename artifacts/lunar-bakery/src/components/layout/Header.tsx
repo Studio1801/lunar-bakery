@@ -43,14 +43,12 @@ export function Header() {
 
         {/* Desktop: CTA right */}
         <div className="hidden md:flex items-center justify-end w-1/3">
-          <a
-            href="https://www.lunarbakery.com/s/order"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-primary text-primary-foreground text-xs font-bold tracking-[0.15em] uppercase px-5 py-3 hover:bg-primary/90 transition-colors"
+          <Link
+            href="/order"
+            className="inline-block bg-primary text-primary-foreground text-sm font-bold px-5 py-3 hover:bg-primary/90 transition-colors"
           >
-            Order Cakes
-          </a>
+            Order for pickup
+          </Link>
         </div>
 
         {/* Mobile: Hamburger left + logo center + ORDER right */}
@@ -69,14 +67,12 @@ export function Header() {
             <img src={logo} alt="Lunar Artisan Baked Goods" className="w-full h-auto mix-blend-multiply" />
           </Link>
 
-          <a
-            href="https://www.lunarbakery.com/s/order"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-primary text-primary-foreground text-[11px] font-bold tracking-[0.12em] uppercase px-4 py-2"
+          <Link
+            href="/order"
+            className="inline-block bg-primary text-primary-foreground text-xs font-bold px-4 py-2"
           >
             Order
-          </a>
+          </Link>
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import logo from '@assets/lunar_logo.png';
+import { Link } from 'wouter';
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -26,14 +27,12 @@ export function Footer() {
             <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary-foreground/50 mb-1">
               Order
             </h4>
-            <a
-              href="https://www.lunarbakery.com/s/order"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/order"
               className="text-sm text-primary-foreground/70 hover:text-white transition-colors"
             >
-              Order Online
-            </a>
+              Order online
+            </Link>
             <span className="text-sm text-primary-foreground/70">Custom Cakes</span>
             <span className="text-sm text-primary-foreground/70">Catering</span>
           </div>
@@ -56,6 +55,12 @@ export function Footer() {
             >
               Email Us
             </a>
+            <Link
+              href="/staff"
+              className="text-sm text-primary-foreground/70 hover:text-white transition-colors"
+            >
+              Staff dashboard
+            </Link>
           </div>
 
           <div className="flex flex-col gap-3">

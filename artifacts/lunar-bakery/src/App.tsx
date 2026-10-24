@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import Home from '@/pages/Home';
+import OrderPage from '@/pages/OrderPage';
+import StaffPage from '@/pages/StaffPage';
 import faviconUrl from '@assets/lunar_favicon.png';
 import {
   Route,
@@ -20,6 +22,8 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/order" component={OrderPage} />
+        <Route path="/staff" component={StaffPage} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
