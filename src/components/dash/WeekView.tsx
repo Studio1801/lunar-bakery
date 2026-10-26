@@ -17,7 +17,7 @@ const nowMin = () => { const n = new Date(); return n.getHours() * 60 + n.getMin
 export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersOpen: boolean; setNumbersOpen: (v: boolean) => void; onMessages?: () => void }) {
   const s = useStore();
   const [week, setWeek] = useState(0);
-  const [dir, setDir] = useState<"" | "from-left" | "from-right">("");
+  const [sel, setSel] = useState(iso(new Date()));
   const [panel, setPanel] = useState<Panel>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set()); // ticked during this visit, so the strike animates
   const [just, setJust] = useState<Set<string>>(new Set()); // new on the board, so it slides in
@@ -25,12 +25,6 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
   const seen = useRef<Set<string> | null>(null);
 
   useEffect(() => { const t = setInterval(() => setClock(nowMin()), 30000); return () => clearInterval(t); }, []);
-  // On a phone the days stack, so jump straight to today, like Baklava.
-  useEffect(() => {
-    if (window.innerWidth > 700) return;
-    const t = setTimeout(() => { const el = document.querySelector("[data-today]"); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 8, behavior: "smooth" }); }, 250);
-    return () => clearTimeout(t);
-  }, []);
   useEffect(() => {
     const ids = new Set(s.orders.map((o) => o.id));
     if (seen.current) {
@@ -45,39 +39,22 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
   const first = days[0]!, last = days[5]!;
   const today = iso(new Date());
   const short = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const selDate = days.some((d) => iso(d) === sel) ? sel : iso(days[0]!);
   const weekOrders = s.orders.filter((o) => o.date >= iso(first) && o.date <= iso(last));
   const dayOrders = (k: string) => s.orders.filter((o) => o.date === k).sort((a, b) => (a.pending ? 0 : 1) - (b.pending ? 0 : 1) || a.time - b.time);
   const dayPieces = (k: string) => dayOrders(k).filter(isLive).reduce((n, o) => n + orderPieces(o, idx), 0);
+  const dayList = dayOrders(selDate);
   const pending = s.orders.filter((o) => o.pending && !o.cancelled).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const threadOf = (id: string) => Object.values(s.threads ?? {}).find((t) => t.orderId === id);
   const unreadOrder = (id: string) => { const t = threadOf(id); return t ? unreadIn(t) : 0; };
   const unreadAll = Object.values(s.threads ?? {}).reduce((n, t) => n + unreadIn(t), 0);
-  // Same as Baklava: one tap asks "picked up?" in a small box, so nothing is crossed out by accident.
-  const [pop, setPop] = useState<Order | null>(null);
-  // Highlighter marks on the time, name or note. Personal reminders, kept on this computer only.
-  const [marks, setMarks] = useState<Record<string, true>>({});
-  useEffect(() => { try { setMarks(JSON.parse(localStorage.getItem("lunar-marks") || "{}")); } catch { /* none yet */ } }, []);
-  const mark = (key: string) => setMarks((m) => {
-    const n = { ...m };
-    if (n[key]) delete n[key]; else n[key] = true;
-    try { localStorage.setItem("lunar-marks", JSON.stringify(n)); } catch { /* ignore */ }
-    return n;
-  });
-  const tap = (e: React.MouseEvent, o: Order) => {
-    const t = e.target as HTMLElement;
-    if (t.closest("button")) return;
-    const m = t.closest<HTMLElement>("[data-mark]");
-    if (m) return mark(o.id + m.dataset["mark"]);
-    if (o.pending) return open(o);
-    setPop(o);
-  };
   const confirmNew = (o: Order) => void dispatch({ t: "status", id: o.id, s: "confirm" }).then((r) => toast(r.ok ? `Confirmed ${o.name}. They can see it on their order page.` : r.error));
   const toggle = (id: string, v: boolean) => {
     setPicked((p) => new Set(p).add(id));
     void dispatch({ t: "done", id, v }).then((r) => { if (!r.ok) toast(r.error); });
   };
-  const go = (n: number) => { if (n === week) return; setDir(n > week ? "from-right" : "from-left"); setPicked(new Set()); setWeek(n); };
-  const open = (o: Order) => { go(weekOf(o.date)); setPanel({ kind: "write", date: o.date, order: o }); };
+  const go = (n: number) => { if (n === week) return; setPicked(new Set()); setWeek(n); setSel(n === 0 ? iso(new Date()) : iso(weekDays(n)[0]!)); };
+  const open = (o: Order) => { setWeek(weekOf(o.date)); setSel(o.date); setPanel({ kind: "write", date: o.date, order: o }); };
   // "Open order" from the Messages inbox.
   useEffect(() => onOpenOrder((id) => { const o = getState().orders.find((x) => x.id === id); if (o) open(o); }), []); // eslint-disable-line react-hooks/exhaustive-deps
   const sub = week === 0 ? "This week" : week === -1 ? "Last week" : week === 1 ? "Next week" : `${Math.abs(week)} weeks ${week < 0 ? "ago" : "ahead"}`;
@@ -93,101 +70,117 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
   return (
     <>
       {(pending.length > 0 || unreadAll > 0) && (
-        <div key={`n${pending.length}-${unreadAll}`} role="status" className="a-rise mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 bg-primary px-4 py-3 text-primary-foreground">
-          {pending.length > 0 && <b className="font-serif text-lg font-normal">{pending.length} online order{pending.length > 1 ? "s" : ""} to confirm</b>}
-          <div className="flex flex-1 flex-wrap gap-x-5 gap-y-1">
-            {pending.slice(0, 4).map((o) => (
-              <button key={o.id} onClick={() => open(o)} className="press text-left text-sm underline underline-offset-4 hover:opacity-80">
-                {o.name}, {parse(o.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} {fmtTime(o.time)}
-              </button>
-            ))}
-            {pending.length > 4 && <span className="text-sm opacity-75">and {pending.length - 4} more</span>}
-          </div>
-          {unreadAll > 0 && <button onClick={onMessages} className="press ml-auto bg-primary-foreground px-4 py-2 font-btn text-xs font-bold uppercase tracking-[0.12em] text-primary">{unreadAll} new message{unreadAll > 1 ? "s" : ""} ›</button>}
+        <div role="status" className="a-rise mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 bg-primary px-5 py-3.5 text-primary-foreground">
+          {pending.length > 0 && (
+            <button onClick={() => { const o = pending[0]!; setWeek(weekOf(o.date)); setSel(o.date); }} className="press text-left font-serif text-lg">
+              {pending.length} new online order{pending.length > 1 ? "s" : ""} to confirm <span className="underline underline-offset-4">Show me</span>
+            </button>
+          )}
+          {unreadAll > 0 && <button onClick={onMessages} className="press ml-auto bg-primary-foreground px-4 py-2 font-btn text-xs font-bold tracking-[0.12em] text-primary">{unreadAll} new message{unreadAll > 1 ? "s" : ""}</button>}
         </div>
       )}
 
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-        <div key={`w${week}`} className="a-fade">
-          <div className="font-serif text-xl leading-none text-foreground">{short(first)} – {short(last)}, {last.getFullYear()}</div>
-          <button onClick={() => go(0)} className={`press mt-1.5 text-sm ${week ? "text-foreground underline underline-offset-4" : "text-muted-foreground"}`}>{week ? `${sub}, back to this week` : sub}</button>
-        </div>
-        <div className="flex items-center gap-5">
-          <button onClick={() => setNumbersOpen(true)} className="press hidden font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground md:inline">Week numbers</button>
-          <button onClick={() => go(week - 1)} className="press flex items-center gap-1 py-2 font-semibold text-foreground"><ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Last week</span></button>
-          <button onClick={() => go(week + 1)} className="press flex items-center gap-1 py-2 font-semibold text-foreground"><span className="hidden sm:inline">Next week</span> <ChevronRight className="h-4 w-4" /></button>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <div className="font-serif text-xl text-foreground">{short(first)} to {short(last)}{week !== 0 && <span className="ml-2 text-base text-muted-foreground">{sub}</span>}</div>
+        <div className="flex items-center gap-4">
+          {week !== 0 && <button onClick={() => go(0)} className="press text-sm underline underline-offset-4">This week</button>}
+          <button onClick={() => go(week - 1)} aria-label="Last week" className="press flex h-11 w-11 items-center justify-center border border-border hover:bg-secondary"><ChevronLeft className="h-5 w-5" /></button>
+          <button onClick={() => go(week + 1)} aria-label="Next week" className="press flex h-11 w-11 items-center justify-center border border-border hover:bg-secondary"><ChevronRight className="h-5 w-5" /></button>
         </div>
       </div>
 
-      <div key={`g${week}`} className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 ${dir}`}>
+      <div role="tablist" aria-label="Day" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {days.map((d) => {
-          const k = iso(d), list = dayOrders(k), pcs = dayPieces(k), closed = s.closed[k], isToday = k === today;
+          const k = iso(d), n = dayOrders(k).filter(isLive).length, wait = dayOrders(k).some((o) => o.pending && !o.cancelled), on = k === selDate;
           return (
-            <section key={k} data-today={isToday || undefined} className={`flex min-h-[200px] flex-col border bg-card sm:min-h-[340px] ${isToday ? "border-primary" : "border-border"}`}>
-              <button onClick={() => setPanel({ kind: "bake", date: k })} className="border-b border-border px-5 py-4 text-left hover:bg-secondary active:bg-muted">
-                <div className="flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-                  {d.toLocaleDateString("en-US", { weekday: "long" })}
-                  {isToday && <span className="bg-accent px-1.5 text-[10px] tracking-[0.08em] text-accent-foreground">today</span>}
-                </div>
-                <div className="mt-0.5 font-serif text-[28px] leading-tight text-foreground">{short(d)}</div>
-                <div className="mt-1 flex items-center gap-2 text-sm">
-                  <span className={pcs > DAILY_LIMIT ? "font-semibold text-destructive" : "text-muted-foreground"}>{pcs} pc</span>
-                  {closed && list.length > 0 && <span className="rounded-full border border-accent px-2 text-xs text-foreground">closed online</span>}
-                </div>
-                {s.days?.[k]?.place && <div className="truncate text-xs text-muted-foreground">{s.days[k]!.place}, {fmtTime(dayHours(s.days[k]).from)} to {fmtTime(dayHours(s.days[k]).to)}</div>}
-                <div className="mt-2 h-1 bg-secondary"><div className={`growx h-full ${pcs > DAILY_LIMIT ? "bg-destructive" : "bg-accent"}`} style={{ width: `${Math.min(100, (pcs / DAILY_LIMIT) * 100)}%` }} /></div>
-              </button>
-              <div className="flex flex-1 flex-col gap-3 p-4">
-                {closed && list.length === 0 && <p className="py-8 text-center font-serif text-xl italic text-muted-foreground">Closed</p>}
-                {list.map((o) => {
-                  const done = !!s.done[o.id];
-                  const soon = isToday && !done && !o.pending && o.time - clock <= 120 && o.time - clock >= -30;
-                  const st = statusOf(o, s.done), gone = st === "cancelled" || st === "declined", unread = unreadOrder(o.id);
-                  const cls = ["ent group border border-border", done && "picked", picked.has(o.id) && "now", just.has(o.id) && "just", st === "pending" && "pending", gone && "gone"].filter(Boolean).join(" ");
-                  const h = Math.floor(o.time / 60), mm = String(o.time % 60).padStart(2, "0");
-                  return (
-                    <div key={o.id} className={cls}>
-                      <div role="button" tabIndex={0} onClick={(e) => (gone ? open(o) : tap(e, o))} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (o.pending || gone) open(o); else setPop(o); } }}
-                        aria-label={`${o.name}, ${fmtTime(o.time)}${done ? ", picked up" : ""}`}
-                        className="body cursor-pointer select-none px-4 py-3.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
-                        <div className="flex items-baseline justify-between gap-3">
-                          <div className="strike font-serif text-[19px] font-semibold leading-tight text-foreground"><span data-mark="n" className={`mark ${marks[o.id + "n"] ? "marked" : ""}`}>{o.name}</span></div>
-                          <span data-mark="t" className={`mark shrink-0 whitespace-nowrap font-mono text-[17px] font-medium ${marks[o.id + "t"] ? "marked" : ""} ${soon ? "soon" : ""} ${done ? "text-muted-foreground" : "text-accent"}`}>{h % 12 || 12}:{mm}<span className="ml-0.5 text-[11px]">{h < 12 ? "am" : "pm"}</span></span>
-                        </div>
-                        <div className="mt-2 space-y-0.5">{o.items.map((i, n) => { const m = idx.get(i.code); return <div key={n} className="strike text-[15px] leading-snug text-foreground/75">{i.qty} × {m ? m.product.name : i.code}{m && <span className="text-muted-foreground"> · {m.size.pieces}</span>}</div>; })}</div>
-                        {o.note && <div data-mark="c" className={`mark mt-2 w-fit max-w-full font-serif text-[16px] italic leading-snug text-primary ${marks[o.id + "c"] ? "marked" : ""}`}>{o.note}</div>}
-                        <div className="mt-2.5 flex items-center gap-2 text-xs text-muted-foreground">
-                          {gone ? <span className="font-mono text-[11px] uppercase tracking-[0.08em]">{st === "cancelled" ? "cancelled" : "declined"}</span>
-                            : st === "pending" ? <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-accent">new</span>
-                            : <span>{st === "ready" ? <span className="mr-1 bg-accent px-1 font-mono text-[10px] uppercase tracking-[0.06em] text-accent-foreground">ready</span> : null}{o.source === "online" ? "online" : "by hand"} · {orderPieces(o, idx)} pc{o.phone ? ` · ${o.phone}` : ""}</span>}
-                          {st === "pending"
-                            ? <button onClick={(e) => { e.stopPropagation(); confirmNew(o); }} className="press ml-auto bg-primary px-2.5 py-1 font-btn text-[11px] font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Confirm</button>
-                            : <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press ml-auto underline underline-offset-2 hover:text-foreground">edit</button>}
-                        </div>
-                        {unread > 0 && <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press a-chip mt-1.5 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-accent"><span className="soon-dot h-2 w-2 rounded-full bg-accent" />{unread} new message{unread > 1 ? "s" : ""}</button>}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div className="mt-auto pt-1">
-                  <button onClick={() => setPanel({ kind: "write", date: k })} className="block w-full py-1.5 text-left text-muted-foreground hover:text-foreground">+ write an order</button>
-                  <button onClick={() => void dispatch({ t: "closed", date: k, v: !closed }).then((r) => toast(r.ok ? (closed ? "Reopened to online orders" : "Closed to online orders") : r.error))} className="block w-full py-1 text-left text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
-                    {closed ? "Reopen this day to online orders" : "Close this day to online orders"}
-                  </button>
-                </div>
-              </div>
-            </section>
+            <button key={k} role="tab" aria-selected={on} onClick={() => setSel(k)}
+              className={`press relative px-3 py-3 text-left ${on ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground hover:border-primary"}`}>
+              <span className={`block text-xs ${on ? "opacity-80" : "text-muted-foreground"}`}>{k === today ? "Today" : d.toLocaleDateString("en-US", { weekday: "short" })}</span>
+              <span className="block font-serif text-3xl leading-tight">{d.getDate()}</span>
+              <span className={`block text-sm ${on ? "opacity-90" : "text-muted-foreground"}`}>{s.closed[k] && !n ? "Closed" : n ? `${n} order${n > 1 ? "s" : ""}` : "None"}</span>
+              {wait && <span aria-label="Needs confirming" className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-accent" />}
+            </button>
           );
         })}
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">
-        Tap an order when it is picked up. Tap a time, name or note to highlight it. Tap a day name for that day's bake list.
-        <button onClick={exportCsv} className="press ml-3 underline underline-offset-2 hover:text-foreground">Export CSV</button>
-      </p>
 
-      <PickupBox o={pop} done={pop ? !!s.done[pop.id] : false} idx={idx} onClose={() => setPop(null)}
-        onYes={(o, v) => { setPop(null); toggle(o.id, v); toast(v ? `Picked up: ${o.name}` : `${o.name} is back to not picked up`); }}
-        onCancel={(o) => { setPop(null); void dispatch({ t: "delete", id: o.id }).then((r) => toast(r.ok ? "Order cancelled" : r.error)); }} />
+      <div key={selDate} className="a-fade mt-6">
+        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+          <div>
+            <h2 className="font-serif text-3xl leading-tight text-foreground">{parse(selDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h2>
+            <p className="mt-1 text-muted-foreground">
+              {dayList.length === 0 ? "No orders yet" : `${dayList.length} order${dayList.length > 1 ? "s" : ""}, ${dayPieces(selDate)} pieces`}
+              {s.closed[selDate] && <span className="ml-2 text-foreground">Closed to online orders</span>}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <button onClick={() => setPanel({ kind: "bake", date: selDate })} className="press text-sm underline underline-offset-4">Bake list and pickup</button>
+            <button onClick={() => setPanel({ kind: "write", date: selDate })} className="press bg-primary px-6 py-3 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Add an order</button>
+          </div>
+        </div>
+
+        <ul className="mt-5 max-w-3xl space-y-3">
+          {dayList.map((o) => {
+            const st = statusOf(o, s.done), unread = unreadOrder(o.id);
+            const gone = st === "cancelled" || st === "declined";
+            const h = Math.floor(o.time / 60), mm = String(o.time % 60).padStart(2, "0");
+            const go1 = (op: Parameters<typeof dispatch>[0], msg: string) => void dispatch(op).then((r) => toast(r.ok ? msg : r.error));
+            return (
+              <li key={o.id} className={`ent border bg-card ${st === "pending" ? "border-accent" : "border-border"} ${gone || st === "picked" ? "opacity-60" : ""} ${just.has(o.id) ? "just" : ""}`}>
+                <div className="flex gap-4 p-4 sm:gap-6 sm:p-5">
+                  <div className="w-20 shrink-0 text-right sm:w-24">
+                    <div className="font-mono text-2xl font-medium leading-none text-foreground sm:text-3xl">{h % 12 || 12}:{mm}</div>
+                    <div className="mt-1 font-mono text-xs text-muted-foreground">{h < 12 ? "am" : "pm"}</div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-3">
+                      <span className="font-serif text-2xl font-semibold leading-tight text-foreground">{o.name}</span>
+                      {st === "pending" && <span className="bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">New online order</span>}
+                      {st === "ready" && <span className="text-sm font-semibold text-accent">Ready</span>}
+                      {st === "picked" && <span className="text-sm text-muted-foreground">Picked up</span>}
+                      {gone && <span className="text-sm text-muted-foreground">{st === "cancelled" ? "Cancelled by customer" : "Declined"}</span>}
+                    </div>
+                    <div className="mt-2 space-y-0.5 text-lg text-foreground/85">
+                      {o.items.map((i, n) => { const m = idx.get(i.code); return <div key={n}>{i.qty} × {m ? m.product.name : i.code}{m && <span className="text-muted-foreground"> · box of {m.size.pieces}</span>}</div>; })}
+                    </div>
+                    {o.note && <p className="mt-2 font-serif text-lg italic text-primary">{o.note}</p>}
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <span>{o.source === "online" ? "Ordered online" : "Written by hand"}</span>
+                      {o.phone && <a href={`tel:${o.phone.replace(/[^\d+]/g, "")}`} className="underline underline-offset-4 hover:text-foreground">{o.phone}</a>}
+                      {unread > 0 && <button onClick={() => open(o)} className="press font-semibold text-accent">{unread} new message{unread > 1 ? "s" : ""}</button>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3 sm:px-5">
+                  {st === "pending" && <>
+                    <button onClick={() => go1({ t: "status", id: o.id, s: "confirm" }, `Confirmed ${o.name}. They can see it on their order page.`)} className="press min-h-11 bg-primary px-6 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Confirm</button>
+                    <button onClick={() => open(o)} className="press min-h-11 px-3 text-sm underline underline-offset-4">Decline</button>
+                  </>}
+                  {st === "confirmed" && <button onClick={() => go1({ t: "status", id: o.id, s: "ready" }, `${o.name} is marked ready.`)} className="press min-h-11 bg-primary px-6 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Mark ready</button>}
+                  {st === "ready" && <>
+                    <button onClick={() => { toggle(o.id, true); toast(`Picked up: ${o.name}`); }} className="press min-h-11 bg-primary px-6 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Picked up</button>
+                    <button onClick={() => go1({ t: "status", id: o.id, s: "unready" }, "Back to confirmed.")} className="press min-h-11 px-3 text-sm underline underline-offset-4">Not ready yet</button>
+                  </>}
+                  {st === "picked" && <button onClick={() => toggle(o.id, false)} className="press min-h-11 px-3 text-sm underline underline-offset-4">Undo picked up</button>}
+                  <button onClick={() => open(o)} className="press ml-auto min-h-11 px-3 text-sm underline underline-offset-4">Details</button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        {dayList.length === 0 && (
+          <div className="mt-5 border border-dashed border-border px-6 py-14 text-center">
+            <p className="font-serif text-2xl italic text-muted-foreground">{s.closed[selDate] ? "Closed to online orders." : "Nothing booked for this day."}</p>
+          </div>
+        )}
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          <button onClick={() => void dispatch({ t: "closed", date: selDate, v: !s.closed[selDate] }).then((r) => toast(r.ok ? (s.closed[selDate] ? "Open to online orders again" : "Closed to online orders") : r.error))} className="press underline underline-offset-4">
+            {s.closed[selDate] ? "Reopen this day to online orders" : "Close this day to online orders"}
+          </button>
+          <button onClick={() => setNumbersOpen(true)} className="press text-muted-foreground underline underline-offset-4 hover:text-foreground">Week totals</button>
+          <button onClick={exportCsv} className="press text-muted-foreground underline underline-offset-4 hover:text-foreground">Export CSV</button>
+        </div>
+      </div>
 
       <Drawer open={!!active} onClose={close}>
         {active?.kind === "write" && (active.order
@@ -266,28 +259,6 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
 
 }
 
-// The small centred box from Baklava: confirm the pickup, go back, or cancel the order (two taps).
-function PickupBox({ o, done, idx, onClose, onYes, onCancel }: { o: Order | null; done: boolean; idx: ReturnType<typeof sizeIndex>; onClose: () => void; onYes: (o: Order, v: boolean) => void; onCancel: (o: Order) => void }) {
-  const [arm, setArm] = useState(false);
-  const yes = useRef<HTMLButtonElement>(null);
-  useEffect(() => { setArm(false); if (!o) return; yes.current?.focus(); const k = (e: KeyboardEvent) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [o]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!o || typeof document === "undefined") return null;
-  const items = itemsText(o, idx);
-  return createPortal(
-    <div className="scrim fixed inset-0 z-50 flex items-center justify-center bg-primary/45 p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-modal="true" aria-label={done ? "Order picked up" : "Confirm order pickup"} className="a-popin w-full max-w-[360px] border-2 border-primary bg-card px-6 py-5">
-        <h3 className="font-serif text-2xl font-medium leading-tight text-foreground">{done ? "Order picked up" : "Confirm order pickup"}</h3>
-        <p className="mb-5 mt-1 text-muted-foreground">{o.name}, {fmtTime(o.time)}, {items}</p>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <button ref={yes} onClick={() => onYes(o, !done)} className="press flex-1 bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90 sm:flex-none">{done ? "Not picked up" : "Confirm"}</button>
-          <button onClick={onClose} className="press text-foreground underline underline-offset-4">Back</button>
-          <button onClick={() => (arm ? onCancel(o) : setArm(true))} className={`press ml-auto text-sm ${arm ? "font-semibold text-destructive" : "text-destructive underline underline-offset-4"}`}>{arm ? "Tap again to cancel order" : "Cancel order"}</button>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
 
 // Where and when customers pick up on this day. The order page and the homepage show it straight away.
 function DaySettings({ date }: { date: string }) {
