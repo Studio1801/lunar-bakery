@@ -242,15 +242,15 @@
 .tabbar { position: absolute; left: 0; bottom: -2px; height: 3px; width: 0; background: var(--primary); transition: transform .3s var(--ease-bar), width .3s var(--ease-bar); }
 
 /* Board entries */
-.ent { background: var(--card); }
+.ent { background: var(--background); }
 .ent.just { animation: l-enter .45s var(--ease-out); }
 .ent .strike { width: fit-content; max-width: 100%; }
 .ent.picked .strike { text-decoration: line-through; text-decoration-thickness: 2px; }
 .ent.picked .body { opacity: .45; }
 .ent.picked.now .strike { text-decoration: none; background: linear-gradient(var(--foreground), var(--foreground)) 0 58% / 100% 2px no-repeat; animation: l-strike .4s .05s ease-out both; }
 .ent.picked.now .body { animation: l-dim .35s ease both; }
-.ent.pending { background: color-mix(in oklab, var(--hl) 55%, var(--card)); }
-.ent.pending:hover { background: color-mix(in oklab, var(--hl) 80%, var(--card)); }
+.ent.pending { background: color-mix(in oklab, var(--hl) 55%, var(--background)); }
+.ent.pending:hover { background: color-mix(in oklab, var(--hl) 80%, var(--background)); }
 .soon::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: oklch(0.58 0.2 27); margin-right: 6px; vertical-align: 1px; animation: l-dot 2s ease-out infinite; }
 
 /* Drawer */

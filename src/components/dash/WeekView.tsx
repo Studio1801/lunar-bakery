@@ -107,65 +107,74 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <button onClick={() => go(week - 1)} className="press flex items-center gap-1 justify-self-start py-2 font-semibold text-foreground"><ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Last week</span></button>
-        <div key={`w${week}`} className="a-fade text-center">
-          <div className="font-serif text-2xl leading-none text-foreground">{short(first)} to {short(last)}</div>
-          <button onClick={() => go(0)} className={`press mt-1 text-sm ${week ? "text-foreground underline underline-offset-4" : "text-muted-foreground"}`}>{week ? `${sub}, back to this week` : sub}</button>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div key={`w${week}`} className="a-fade">
+          <div className="font-serif text-xl leading-none text-foreground">{short(first)} – {short(last)}, {last.getFullYear()}</div>
+          <button onClick={() => go(0)} className={`press mt-1.5 text-sm ${week ? "text-foreground underline underline-offset-4" : "text-muted-foreground"}`}>{week ? `${sub}, back to this week` : sub}</button>
         </div>
-        <div className="flex items-center gap-5 justify-self-end">
+        <div className="flex items-center gap-5">
           <button onClick={() => setNumbersOpen(true)} className="press hidden font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground md:inline">Week numbers</button>
+          <button onClick={() => go(week - 1)} className="press flex items-center gap-1 py-2 font-semibold text-foreground"><ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Last week</span></button>
           <button onClick={() => go(week + 1)} className="press flex items-center gap-1 py-2 font-semibold text-foreground"><span className="hidden sm:inline">Next week</span> <ChevronRight className="h-4 w-4" /></button>
         </div>
       </div>
 
-      <div key={`g${week}`} className={`grid grid-cols-1 overflow-hidden border border-primary bg-card sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 ${dir}`}>
+      <div key={`g${week}`} className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 ${dir}`}>
         {days.map((d) => {
           const k = iso(d), list = dayOrders(k), pcs = dayPieces(k), closed = s.closed[k], isToday = k === today;
           return (
-            <section key={k} data-today={isToday || undefined} className={`flex min-h-[140px] flex-col sm:min-h-[520px] border-b border-r border-border last:border-r-0 ${isToday ? "bg-secondary/40" : ""}`}>
-              <button onClick={() => setPanel({ kind: "bake", date: k })} className="border-b-2 border-primary px-3 py-3 text-left hover:bg-secondary active:bg-muted">
-                <div className={`inline-block font-serif text-xl text-foreground ${isToday ? "border-b-2 border-accent" : ""}`}>{d.toLocaleDateString("en-US", { weekday: "long" })}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-sm">
-                  <span className={pcs > DAILY_LIMIT ? "font-semibold text-destructive" : "text-muted-foreground"}>{short(d)} · {pcs} pc</span>
-                  {closed && <span className="rounded-full border border-accent px-2 text-xs text-foreground">closed online</span>}
+            <section key={k} data-today={isToday || undefined} className={`flex min-h-[200px] flex-col border bg-card sm:min-h-[340px] ${isToday ? "border-primary" : "border-border"}`}>
+              <button onClick={() => setPanel({ kind: "bake", date: k })} className="border-b border-border px-5 py-4 text-left hover:bg-secondary active:bg-muted">
+                <div className="flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {d.toLocaleDateString("en-US", { weekday: "long" })}
+                  {isToday && <span className="bg-accent px-1.5 text-[10px] tracking-[0.08em] text-accent-foreground">today</span>}
+                </div>
+                <div className="mt-0.5 font-serif text-[28px] leading-tight text-foreground">{short(d)}</div>
+                <div className="mt-1 flex items-center gap-2 text-sm">
+                  <span className={pcs > DAILY_LIMIT ? "font-semibold text-destructive" : "text-muted-foreground"}>{pcs} pc</span>
+                  {closed && list.length > 0 && <span className="rounded-full border border-accent px-2 text-xs text-foreground">closed online</span>}
                 </div>
                 {s.days?.[k]?.place && <div className="truncate text-xs text-muted-foreground">{s.days[k]!.place}, {fmtTime(dayHours(s.days[k]).from)} to {fmtTime(dayHours(s.days[k]).to)}</div>}
                 <div className="mt-2 h-1 bg-secondary"><div className={`growx h-full ${pcs > DAILY_LIMIT ? "bg-destructive" : "bg-accent"}`} style={{ width: `${Math.min(100, (pcs / DAILY_LIMIT) * 100)}%` }} /></div>
               </button>
-              <div className="ruled flex-1">
+              <div className="flex flex-1 flex-col gap-3 p-4">
+                {closed && list.length === 0 && <p className="py-8 text-center font-serif text-xl italic text-muted-foreground">Closed</p>}
                 {list.map((o) => {
                   const done = !!s.done[o.id];
                   const soon = isToday && !done && !o.pending && o.time - clock <= 120 && o.time - clock >= -30;
                   const st = statusOf(o, s.done), gone = st === "cancelled" || st === "declined", unread = unreadOrder(o.id);
-                  const cls = ["ent group border-b border-border", done && "picked", picked.has(o.id) && "now", just.has(o.id) && "just", st === "pending" && "pending", gone && "gone"].filter(Boolean).join(" ");
+                  const cls = ["ent group border border-border", done && "picked", picked.has(o.id) && "now", just.has(o.id) && "just", st === "pending" && "pending", gone && "gone"].filter(Boolean).join(" ");
+                  const h = Math.floor(o.time / 60), mm = String(o.time % 60).padStart(2, "0");
                   return (
                     <div key={o.id} className={cls}>
                       <div role="button" tabIndex={0} onClick={(e) => (gone ? open(o) : tap(e, o))} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (o.pending || gone) open(o); else setPop(o); } }}
                         aria-label={`${o.name}, ${fmtTime(o.time)}${done ? ", picked up" : ""}`}
-                        className="body cursor-pointer select-none px-3 py-2.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
-                        <div className="flex items-center gap-2">
-                          <span data-mark="t" className={`mark whitespace-nowrap px-1.5 font-mono text-[13px] font-medium ${marks[o.id + "t"] ? "marked" : ""} ${soon ? "soon" : ""} ${done ? "bg-muted-foreground text-card" : "bg-primary text-primary-foreground"}`}>{fmtTime(o.time)}</span>
-                          {gone ? <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{st === "cancelled" ? "cancelled" : "declined"}</span>
+                        className="body cursor-pointer select-none px-4 py-3.5 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <div className="strike font-serif text-[19px] font-semibold leading-tight text-foreground"><span data-mark="n" className={`mark ${marks[o.id + "n"] ? "marked" : ""}`}>{o.name}</span></div>
+                          <span data-mark="t" className={`mark shrink-0 whitespace-nowrap font-mono text-[17px] font-medium ${marks[o.id + "t"] ? "marked" : ""} ${soon ? "soon" : ""} ${done ? "text-muted-foreground" : "text-accent"}`}>{h % 12 || 12}:{mm}<span className="ml-0.5 text-[11px]">{h < 12 ? "am" : "pm"}</span></span>
+                        </div>
+                        <div className="mt-2 space-y-0.5">{o.items.map((i, n) => { const m = idx.get(i.code); return <div key={n} className="strike text-[15px] leading-snug text-foreground/75">{i.qty} × {m ? m.product.name : i.code}{m && <span className="text-muted-foreground"> · {m.size.pieces}</span>}</div>; })}</div>
+                        {o.note && <div data-mark="c" className={`mark mt-2 w-fit max-w-full font-serif text-[16px] italic leading-snug text-primary ${marks[o.id + "c"] ? "marked" : ""}`}>{o.note}</div>}
+                        <div className="mt-2.5 flex items-center gap-2 text-xs text-muted-foreground">
+                          {gone ? <span className="font-mono text-[11px] uppercase tracking-[0.08em]">{st === "cancelled" ? "cancelled" : "declined"}</span>
                             : st === "pending" ? <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-accent">new</span>
-                            : <span className="text-xs text-muted-foreground">{st === "ready" ? <span className="mr-1 bg-accent px-1 font-mono text-[10px] uppercase tracking-[0.06em] text-accent-foreground">ready</span> : null}{o.source === "online" ? "online" : "by hand"} · {orderPieces(o, idx)} pc</span>}
+                            : <span>{st === "ready" ? <span className="mr-1 bg-accent px-1 font-mono text-[10px] uppercase tracking-[0.06em] text-accent-foreground">ready</span> : null}{o.source === "online" ? "online" : "by hand"} · {orderPieces(o, idx)} pc{o.phone ? ` · ${o.phone}` : ""}</span>}
                           {st === "pending"
                             ? <button onClick={(e) => { e.stopPropagation(); confirmNew(o); }} className="press ml-auto bg-accent px-2.5 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-accent-foreground hover:bg-accent/90">Confirm</button>
-                            : <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press ml-auto text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">edit</button>}
+                            : <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press ml-auto underline underline-offset-2 hover:text-foreground">edit</button>}
                         </div>
-                        <div className="strike mt-1 font-serif text-[19px] font-medium leading-tight text-foreground"><span data-mark="n" className={`mark ${marks[o.id + "n"] ? "marked" : ""}`}>{o.name}</span></div>
-                        <div className="mt-1 space-y-0.5">{o.items.map((i, n) => { const m = idx.get(i.code); return <div key={n} className="strike flex gap-1.5 text-[14px] leading-snug text-foreground/80"><span className="font-mono text-[12px] text-muted-foreground">{i.qty}×</span><span>{m ? m.product.name : i.code}</span>{m && <span className="text-muted-foreground">· {m.size.pieces}</span>}</div>; })}</div>
-                        {o.phone && <div className="mt-1 text-xs text-muted-foreground">{o.phone}</div>}
-                        {o.note && <div data-mark="c" className={`note-circle mark mt-1 ${marks[o.id + "c"] ? "marked" : ""}`}>{o.note}</div>}
                         {unread > 0 && <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press a-chip mt-1.5 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-accent"><span className="soon-dot h-2 w-2 rounded-full bg-accent" />{unread} new message{unread > 1 ? "s" : ""}</button>}
                       </div>
                     </div>
                   );
                 })}
-                <button onClick={() => setPanel({ kind: "write", date: k })} className="block w-full px-3 py-2 text-left text-muted-foreground hover:bg-secondary hover:text-foreground">+ write an order</button>
-                <button onClick={() => void dispatch({ t: "closed", date: k, v: !closed }).then((r) => toast(r.ok ? (closed ? "Reopened to online orders" : "Closed to online orders") : r.error))} className="block w-full px-3 pb-3 text-left text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
-                  {closed ? "Reopen this day to online orders" : "Close this day to online orders"}
-                </button>
+                <div className="mt-auto pt-1">
+                  <button onClick={() => setPanel({ kind: "write", date: k })} className="block w-full py-1.5 text-left text-muted-foreground hover:text-foreground">+ write an order</button>
+                  <button onClick={() => void dispatch({ t: "closed", date: k, v: !closed }).then((r) => toast(r.ok ? (closed ? "Reopened to online orders" : "Closed to online orders") : r.error))} className="block w-full py-1 text-left text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
+                    {closed ? "Reopen this day to online orders" : "Close this day to online orders"}
+                  </button>
+                </div>
               </div>
             </section>
           );
