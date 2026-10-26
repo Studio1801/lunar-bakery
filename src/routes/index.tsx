@@ -101,11 +101,11 @@ function Home() {
 
         {/* 02 CREDIBILITY */}
         <section className="w-full border-y border-border/60 px-6 py-5">
-          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-3 md:gap-4">
+          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-3 md:gap-4">
             {["Est. 2020", "Featured In SF Chronicle", "★★★★★ on Yelp"].map((t) => (
-              <span key={t} className="inline-flex items-center border border-primary/30 px-4 py-2 text-xs font-mono font-medium uppercase tracking-[0.08em]">{t}</span>
+              <span key={t} className="inline-flex items-center border border-primary/30 px-4 py-2 text-xs font-btn font-bold uppercase tracking-[0.12em]">{t}</span>
             ))}
-            <span className="inline-flex items-center gap-2 border border-primary/30 px-4 py-2 text-xs font-mono font-medium uppercase tracking-[0.08em]">
+            <span className="inline-flex items-center gap-2 border border-primary/30 px-4 py-2 text-xs font-btn font-bold uppercase tracking-[0.12em]">
               <span className="inline-block h-2 w-2 rounded-full border-2 border-primary" />Third-Culture Bakery
             </span>
           </div>
