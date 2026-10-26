@@ -15,6 +15,8 @@ const WEEK = 7 * 864e5;
 const weekOf = (date: string) => Math.round((mondayOf(0, parse(date)).getTime() - mondayOf(0).getTime()) / WEEK);
 // One spring for the zoom, so opening and closing feel like the same movement.
 const ZOOM = { type: "spring" as const, stiffness: 230, damping: 30, mass: 0.9 };
+const boxes = (qty: number, pieces: number) => `${qty} box${qty > 1 ? "es" : ""} of ${pieces}`;
+const clock12 = (min: number) => `${Math.floor(min / 60) % 12 || 12}:${String(min % 60).padStart(2, "0")} ${min < 720 ? "am" : "pm"}`;
 const nowMin = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
 
 export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersOpen: boolean; setNumbersOpen: (v: boolean) => void; onMessages?: () => void }) {
@@ -123,46 +125,48 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
               style={{ opacity: zoom === k ? 0 : 1 }}
               className={`group/day flex min-h-[240px] flex-col bg-card shadow-[0_1px_0_rgb(22_34_61_/_0.04),0_12px_32px_-18px_rgb(22_34_61_/_0.28)] transition-shadow duration-300 hover:shadow-[0_1px_0_rgb(22_34_61_/_0.04),0_18px_40px_-16px_rgb(22_34_61_/_0.38)] ${isToday ? "border border-primary" : "border border-border"}`}>
               <button onClick={() => setZoom(k)} aria-label={`Open ${parse(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
-                className="relative flex items-end justify-between gap-3 px-5 pb-4 pt-5 text-left transition-colors hover:bg-secondary/60">
-                <span>
-                  <span className="flex items-center gap-2 text-[13px] tracking-wide text-muted-foreground">{d.toLocaleDateString("en-US", { weekday: "long" })}{isToday && <span className="bg-accent px-1.5 py-px text-[10px] font-semibold tracking-[0.1em] text-accent-foreground">TODAY</span>}</span>
-                  <span className="block font-serif text-[34px] leading-none text-foreground">{short(d)}</span>
+                className="flex items-baseline justify-between gap-3 border-b border-border px-5 py-4 text-left transition-colors hover:bg-secondary/60">
+                <span className="font-btn">
+                  <span className="block text-sm font-bold text-muted-foreground">{d.toLocaleDateString("en-US", { weekday: "long" })}{isToday && <span className="ml-2 bg-accent px-1.5 py-0.5 text-xs font-bold text-accent-foreground">Today</span>}</span>
+                  <span className="block font-serif text-4xl leading-tight text-foreground">{short(d)}</span>
                 </span>
-                <span className="text-right">
-                  <span className="block font-serif text-2xl leading-none text-foreground">{pcs}<span className="ml-1 font-sans text-xs text-muted-foreground">pieces</span></span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{s.closed[k] && !list.length ? "Closed to online" : `${list.length} order${list.length === 1 ? "" : "s"}`}</span>
+                <span className="text-right font-btn text-[15px] leading-snug text-foreground/80">
+                  <span className="block font-bold">{s.closed[k] && !list.length ? "Closed to online" : `${list.length} order${list.length === 1 ? "" : "s"}`}</span>
+                  <span className="block">{pcs} pieces</span>
                 </span>
-                <span aria-hidden="true" className="absolute inset-x-5 bottom-0 h-px bg-gradient-to-r from-accent via-accent/40 to-transparent" />
               </button>
-              <ul className="flex-1">
+              <ul className="flex-1 font-btn">
                 {list.map((o) => {
-                  const st = statusOf(o, s.done), h = Math.floor(o.time / 60), mm = String(o.time % 60).padStart(2, "0");
+                  const st = statusOf(o, s.done);
                   const dim = st === "picked" || st === "cancelled" || st === "declined";
                   return (
-                    <li key={o.id} className="border-t border-border/70 first:border-t-0">
-                      <button onClick={() => setZoom(k)} className={`grid w-full grid-cols-[4.25rem_1fr] gap-x-3 px-5 py-3.5 text-left transition-colors hover:bg-secondary/60 ${dim ? "opacity-55" : ""}`}>
-                        <span className="pt-1 text-right font-mono text-[13px] leading-tight text-accent">{h % 12 || 12}:{mm}<span className="block text-[10px] opacity-80">{h < 12 ? "am" : "pm"}</span></span>
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-2">
-                            <span className={`truncate font-serif text-lg font-semibold leading-tight text-foreground ${dim ? "line-through" : ""}`}>{o.name}</span>
-                            {st === "pending" && <span className="shrink-0 bg-accent px-1.5 py-px text-[10px] font-semibold tracking-[0.08em] text-accent-foreground">NEW</span>}
-                            {st === "ready" && <span className="shrink-0 text-xs font-semibold text-accent">ready</span>}
-                            {st === "picked" && <span className="shrink-0 text-xs text-muted-foreground">picked up</span>}
-                          </span>
-                          {o.items.map((i, n) => { const m = idx.get(i.code); return <span key={n} className="block text-[15px] leading-snug text-foreground/75">{i.qty} × {m ? m.product.name : i.code}{m && <span className="text-muted-foreground"> · {m.size.pieces}</span>}</span>; })}
-                          {o.note && <span className="mt-1 block font-serif text-[15px] italic leading-snug text-primary">{o.note}</span>}
-                          <span className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <span className={`h-1.5 w-1.5 rounded-full ${o.source === "online" ? "bg-accent" : "bg-primary"}`} aria-hidden="true" />
-                            {o.source === "online" ? "From the website" : "Added by hand"}
-                          </span>
+                    <li key={o.id} className="border-t border-border first:border-t-0">
+                      <button onClick={() => setZoom(k)} className={`block w-full px-5 py-4 text-left transition-colors hover:bg-secondary/60 ${dim ? "opacity-55" : ""}`}>
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className={`text-xl font-bold leading-tight text-foreground ${dim ? "line-through" : ""}`}>{o.name}</span>
+                          <span className="shrink-0 text-xl font-bold tabular-nums text-foreground">{clock12(o.time)}</span>
+                        </span>
+                        <span className="mt-2 block space-y-1">
+                          {o.items.map((i, n) => { const m = idx.get(i.code); return (
+                            <span key={n} className="block text-[17px] leading-snug text-foreground">
+                              {m ? m.product.name : i.code}<span className="text-foreground/70"> · {m ? boxes(i.qty, m.size.pieces) : `${i.qty}`}</span>
+                            </span>
+                          ); })}
+                        </span>
+                        {o.note && <span className="mt-2.5 block bg-accent/15 px-3 py-2 text-[17px] leading-snug text-foreground"><b className="font-bold">Note: </b>{o.note}</span>}
+                        <span className="mt-2.5 flex flex-wrap items-center gap-x-3 text-sm text-foreground/70">
+                          <span>{o.source === "online" ? "From the website" : "Added by hand"}</span>
+                          {st === "pending" && <span className="bg-accent px-1.5 py-0.5 text-xs font-bold text-accent-foreground">New, to confirm</span>}
+                          {st === "ready" && <span className="font-bold text-foreground">Ready</span>}
+                          {st === "picked" && <span className="font-bold">Picked up</span>}
                         </span>
                       </button>
                     </li>
                   );
                 })}
-                {list.length === 0 && <li className="px-5 py-10 text-center font-serif text-lg italic text-muted-foreground">{s.closed[k] ? "Closed" : "Nothing yet"}</li>}
+                {list.length === 0 && <li className="px-5 py-10 text-center text-base text-muted-foreground">{s.closed[k] ? "Closed" : "No orders yet"}</li>}
               </ul>
-              <button onClick={() => setPanel({ kind: "write", date: k })} className="press mt-auto border-t border-border px-5 py-3 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground">+ Add an order</button>
+              <button onClick={() => setPanel({ kind: "write", date: k })} className="press mt-auto border-t border-border px-5 py-3.5 text-left font-btn text-base font-bold text-foreground transition-colors hover:bg-secondary/60">+ Add an order</button>
             </motion.section>
           );
         })}
@@ -211,17 +215,17 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-3">
-                        <span className="font-serif text-2xl font-semibold leading-tight text-foreground">{o.name}</span>
+                        <span className="font-btn text-2xl font-bold leading-tight text-foreground">{o.name}</span>
                         {st === "pending" && <span className="bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">New online order</span>}
                         {st === "ready" && <span className="text-sm font-semibold text-accent">Ready</span>}
                         {st === "picked" && <span className="text-sm text-muted-foreground">Picked up</span>}
                         {gone && <span className="text-sm text-muted-foreground">{st === "cancelled" ? "Cancelled by customer" : "Declined"}</span>}
                       </div>
-                      <div className="mt-2 space-y-0.5 text-lg text-foreground/85">
-                        {o.items.map((i, n) => { const m = idx.get(i.code); return <div key={n}>{i.qty} × {m ? m.product.name : i.code}{m && <span className="text-muted-foreground"> · box of {m.size.pieces}</span>}</div>; })}
+                      <div className="mt-2 space-y-1 font-btn text-xl text-foreground">
+                        {o.items.map((i, n) => { const m = idx.get(i.code); return <div key={n}>{m ? m.product.name : i.code}{m && <span className="text-foreground/70"> · {boxes(i.qty, m.size.pieces)}</span>}</div>; })}
                       </div>
-                      {o.note && <p className="mt-2 font-serif text-lg italic text-primary">{o.note}</p>}
-                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      {o.note && <p className="mt-3 bg-accent/15 px-3 py-2 font-btn text-xl text-foreground"><b>Note: </b>{o.note}</p>}
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 font-btn text-base text-foreground/70">
                         <span>{o.source === "online" ? "From the website" : "Added by hand"}</span>
                         {o.phone && <a href={`tel:${o.phone.replace(/[^\d+]/g, "")}`} className="underline underline-offset-4 hover:text-foreground">{o.phone}</a>}
                         {unread > 0 && <button onClick={() => open(o)} className="press font-semibold text-accent">{unread} new message{unread > 1 ? "s" : ""}</button>}
