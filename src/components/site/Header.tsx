@@ -37,7 +37,7 @@ export function Header({ onOrderPage }: { onOrderPage?: boolean }) {
           ))}
         </nav>
         <a href="/order" aria-current={onOrderPage ? "page" : undefined}
-          className={`press hidden px-5 py-3 text-xs font-mono font-medium uppercase tracking-[0.08em] md:inline-block ${onOrderPage ? "border border-primary text-primary" : "bg-accent text-accent-foreground hover:bg-accent/90"}`}>
+          className={`press hidden px-5 py-3 text-xs font-btn font-bold uppercase tracking-[0.12em] md:inline-block ${onOrderPage ? "border border-primary text-primary" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}>
           {onOrderPage ? "Ordering" : "Order now »"}
         </a>
 
@@ -50,7 +50,7 @@ export function Header({ onOrderPage }: { onOrderPage?: boolean }) {
           <a href="/" className="absolute left-1/2 w-28 -translate-x-1/2" aria-label="Lunar Bakery home">
             <img src="/images/lunar-logo.png" alt="Lunar Artisan Baked Goods" className="h-auto w-full mix-blend-multiply" />
           </a>
-          {!onOrderPage && <a href="/order" className="press bg-accent px-4 py-2 text-[11px] font-mono font-medium uppercase tracking-[0.08em] text-accent-foreground">Order »</a>}
+          {!onOrderPage && <a href="/order" className="press bg-primary px-4 py-2 text-[11px] font-btn font-bold uppercase tracking-[0.12em] text-primary-foreground">Order »</a>}
         </div>
       </div>
       {open && (

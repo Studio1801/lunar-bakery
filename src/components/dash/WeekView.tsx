@@ -103,7 +103,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
             ))}
             {pending.length > 4 && <span className="text-sm opacity-75">and {pending.length - 4} more</span>}
           </div>
-          {unreadAll > 0 && <button onClick={onMessages} className="press ml-auto bg-primary-foreground px-4 py-2 font-mono text-xs font-medium uppercase tracking-[0.08em] text-primary">{unreadAll} new message{unreadAll > 1 ? "s" : ""} ›</button>}
+          {unreadAll > 0 && <button onClick={onMessages} className="press ml-auto bg-primary-foreground px-4 py-2 font-btn text-xs font-bold uppercase tracking-[0.12em] text-primary">{unreadAll} new message{unreadAll > 1 ? "s" : ""} ›</button>}
         </div>
       )}
 
@@ -161,7 +161,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
                             : st === "pending" ? <span className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-accent">new</span>
                             : <span>{st === "ready" ? <span className="mr-1 bg-accent px-1 font-mono text-[10px] uppercase tracking-[0.06em] text-accent-foreground">ready</span> : null}{o.source === "online" ? "online" : "by hand"} · {orderPieces(o, idx)} pc{o.phone ? ` · ${o.phone}` : ""}</span>}
                           {st === "pending"
-                            ? <button onClick={(e) => { e.stopPropagation(); confirmNew(o); }} className="press ml-auto bg-accent px-2.5 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-accent-foreground hover:bg-accent/90">Confirm</button>
+                            ? <button onClick={(e) => { e.stopPropagation(); confirmNew(o); }} className="press ml-auto bg-primary px-2.5 py-1 font-btn text-[11px] font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Confirm</button>
                             : <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press ml-auto underline underline-offset-2 hover:text-foreground">edit</button>}
                         </div>
                         {unread > 0 && <button onClick={(e) => { e.stopPropagation(); open(o); }} className="press a-chip mt-1.5 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-accent"><span className="soon-dot h-2 w-2 rounded-full bg-accent" />{unread} new message{unread > 1 ? "s" : ""}</button>}
@@ -256,7 +256,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
           ))}
         </ul>
         {list.length === 0 && <p className="mt-6 text-muted-foreground">Nothing booked for this day yet.</p>}
-        <button onClick={onWrite} className="press mt-6 bg-primary px-5 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-primary-foreground hover:opacity-90">Write an order</button>
+        <button onClick={onWrite} className="press mt-6 bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground hover:opacity-90">Write an order</button>
         <DaySettings key={date} date={date} />
       </div>
     );
@@ -279,7 +279,7 @@ function PickupBox({ o, done, idx, onClose, onYes, onCancel }: { o: Order | null
         <h3 className="font-serif text-2xl font-medium leading-tight text-foreground">{done ? "Order picked up" : "Confirm order pickup"}</h3>
         <p className="mb-5 mt-1 text-muted-foreground">{o.name}, {fmtTime(o.time)}, {items}</p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <button ref={yes} onClick={() => onYes(o, !done)} className="press flex-1 bg-primary px-5 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-primary-foreground hover:bg-primary/90 sm:flex-none">{done ? "Not picked up" : "Confirm"}</button>
+          <button ref={yes} onClick={() => onYes(o, !done)} className="press flex-1 bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90 sm:flex-none">{done ? "Not picked up" : "Confirm"}</button>
           <button onClick={onClose} className="press text-foreground underline underline-offset-4">Back</button>
           <button onClick={() => (arm ? onCancel(o) : setArm(true))} className={`press ml-auto text-sm ${arm ? "font-semibold text-destructive" : "text-destructive underline underline-offset-4"}`}>{arm ? "Tap again to cancel order" : "Cancel order"}</button>
         </div>
@@ -317,7 +317,7 @@ function DaySettings({ date }: { date: string }) {
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
         {dirty && <button onClick={() => void dispatch({ t: "day", date, info: { place: place.trim() || undefined, from: from === OPEN_FROM ? undefined : from, to: to === OPEN_TO ? undefined : to } }).then((r) => toast(r.ok ? "Saved. Customers see the new pickup details now." : r.error))}
-          className="press a-rise bg-accent px-5 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-accent-foreground">Save pickup details</button>}
+          className="press a-rise bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground">Save pickup details</button>}
         <button onClick={() => void dispatch({ t: "closed", date, v: !closed }).then((r) => toast(r.ok ? (closed ? "Open to online orders again" : "Closed to online orders") : r.error))}
           className={`press text-sm ${closed ? "font-semibold text-accent" : "text-foreground"} underline underline-offset-4`}>{closed ? "Closed to online orders. Reopen" : "Close this day to online orders"}</button>
       </div>

@@ -8,6 +8,8 @@
 @import "@fontsource/lora/latin-400-italic.css";
 @import "@fontsource/lora/latin-500-italic.css";
 @import "@fontsource/lora/latin-600-italic.css";
+@import "@fontsource/pt-sans/latin-400.css";
+@import "@fontsource/pt-sans/latin-700.css";
 @import "@fontsource/dm-mono/latin-400.css";
 @import "@fontsource/dm-mono/latin-500.css";
 
@@ -64,6 +66,7 @@
   --font-serif: "Lora", Georgia, serif;
   --font-sans: "Lora", Georgia, serif; /* Lunar sets everything in Lora */
   --font-hand: "Lora", Georgia, serif;
+  --font-btn: "PT Sans", system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace; /* buttons and labels, as on lunarbakery.com */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);

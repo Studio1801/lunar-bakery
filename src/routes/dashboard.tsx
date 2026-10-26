@@ -102,7 +102,7 @@ function Login({ onLogin, expired }: { onLogin: (u: string) => void; expired: bo
             <div className="flex items-end gap-3"><input autoComplete="current-password" type={show ? "text" : "password"} value={p} onChange={(e) => { setP(e.target.value); setErr(""); }} className={input} /><button type="button" onClick={() => setShow(!show)} className="press pb-2 text-sm text-muted-foreground underline">{show ? "Hide" : "Show"}</button></div>
           </label>
           {err && <p key={err} className="a-rise text-sm text-destructive">{err}</p>}
-          <button disabled={checking} className="press w-full bg-primary py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-primary-foreground hover:opacity-90 disabled:opacity-70">{checking ? "Checking..." : "Sign in"}</button>
+          <button disabled={checking} className="press w-full bg-primary py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground hover:opacity-90 disabled:opacity-70">{checking ? "Checking..." : "Sign in"}</button>
           <p className="border-t border-border pt-4 text-sm text-muted-foreground">Demo password: <span className="code-chip">lunar123</span></p>
         </div>
       </form>

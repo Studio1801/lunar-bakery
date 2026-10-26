@@ -31,7 +31,7 @@ export function OrderPanel({ order, weekOffset, onDone }: { order: Order; weekOf
     setBusy(false);
     toast(r.ok ? msg : r.error);
   };
-  const primary = "press bg-primary px-5 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-primary-foreground hover:bg-primary/90 disabled:opacity-60";
+  const primary = "press bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90 disabled:opacity-60";
   const quiet = "press text-sm underline underline-offset-4 text-foreground hover:text-accent";
 
   if (editing) return <OrderForm initial={o} date={o.date} weekOffset={weekOffset} onDone={() => setEditing(false)} />;
@@ -39,7 +39,7 @@ export function OrderPanel({ order, weekOffset, onDone }: { order: Order; weekOf
   return (
     <div className="space-y-7 pb-6 pr-1">
       <div className="a-rise pr-14">
-        <span key={st} className={`a-chip inline-block px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] ${st === "pending" ? "bg-accent text-accent-foreground" : st === "cancelled" || st === "declined" ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"}`}>{LABEL[st]}</span>
+        <span key={st} className={`a-chip inline-block px-2 py-0.5 font-mono text-[11px] uppercase tracking-[0.08em] ${st === "pending" ? "bg-primary text-primary-foreground" : st === "cancelled" || st === "declined" ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"}`}>{LABEL[st]}</span>
         <h2 className="mt-3 font-serif text-4xl font-medium leading-tight tracking-[-0.01em] text-foreground">{o.name}</h2>
         <p className="mt-1 text-foreground">{parse(o.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} at {fmtTime(o.time)}</p>
         <p className="text-sm text-muted-foreground">

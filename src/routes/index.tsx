@@ -60,8 +60,8 @@ const MENU: Record<Season, { name: string; price: string; img: string }[]> = {
 const MAP = "https://maps.google.com/?q=2948+Folsom+St,+San+Francisco,+CA+94110";
 const IG = "https://www.instagram.com/lunarbakerysf/";
 
-const btn = "press inline-flex items-center justify-center px-10 py-4 text-sm font-mono font-medium uppercase tracking-[0.08em]";
-const btnSolid = `${btn} bg-accent text-accent-foreground hover:bg-accent/90`;
+const btn = "press inline-flex items-center justify-center px-10 py-4 text-sm font-btn font-bold uppercase tracking-[0.12em]";
+const btnSolid = `${btn} bg-primary text-primary-foreground hover:bg-primary/90`;
 const btnLine = `${btn} border border-primary text-primary hover:bg-primary hover:text-primary-foreground`;
 const eyebrow = "mb-3 text-xs font-mono font-medium uppercase tracking-[0.08em] text-accent";
 
@@ -79,10 +79,10 @@ function Home() {
       <main className="flex-grow">
         {/* 01 HERO */}
         <section id="hero" className="w-full">
-          <div className="w-full overflow-hidden" style={{ maxHeight: "22vh", minHeight: 110 }}>
+          <div className="w-full overflow-hidden" style={{ maxHeight: "33vh", minHeight: 165 }}>
             <motion.img initial={{ scale: 1.06, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
               src="/images/hero-natas.jpg" alt="A tray of freshly baked pastel de nata" fetchPriority="high"
-              className="h-full w-full object-cover" style={{ maxHeight: "22vh", minHeight: 110, objectPosition: "center 55%" }} />
+              className="h-full w-full object-cover" style={{ maxHeight: "33vh", minHeight: 165, objectPosition: "center 55%" }} />
           </div>
           <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col items-center px-6 pb-12 pt-8 text-center md:pb-14 md:pt-10">
             <motion.div variants={fadeInUp} className="mb-5 h-[3px] w-16 bg-primary" />
@@ -120,7 +120,7 @@ function Home() {
               <div className="flex flex-wrap" role="tablist">
                 {SEASONS.map(({ key, label }) => (
                   <button key={key} role="tab" aria-selected={season === key} onClick={() => setSeason(key)}
-                    className={`press border px-6 py-2 text-sm font-mono font-medium uppercase tracking-[0.08em] ${season === key ? "border-primary bg-primary text-primary-foreground" : "border-primary/30 text-primary hover:border-primary"}`}>
+                    className={`press border px-6 py-2 text-sm font-btn font-bold uppercase tracking-[0.12em] ${season === key ? "border-primary bg-primary text-primary-foreground" : "border-primary/30 text-primary hover:border-primary"}`}>
                     {label}
                   </button>
                 ))}

@@ -107,7 +107,7 @@ export function OrderForm({ initial, date, weekOffset, onDone, embedded }: { ini
 
       <div className="sticky bottom-0 -mx-6 mt-2 flex items-center gap-4 border-t border-border bg-card px-6 py-4">
         {err && <p key={err} className="a-rise absolute -top-9 left-6 bg-destructive px-2 py-1 text-sm text-destructive-foreground">{err}</p>}
-        <button onClick={save} className="press bg-primary px-5 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-primary-foreground hover:opacity-90">{initial ? "Save changes" : "Save order"}</button>
+        <button onClick={save} className="press bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground hover:opacity-90">{initial ? "Save changes" : "Save order"}</button>
         <button onClick={onDone} className="press underline underline-offset-4">Cancel</button>
         {initial && <button onClick={del} className={`press ml-auto text-sm ${sure ? "bg-destructive px-3 py-2 font-semibold text-destructive-foreground" : "text-destructive underline"}`}>{sure ? "Tap again to delete" : "Delete"}</button>}
       </div>

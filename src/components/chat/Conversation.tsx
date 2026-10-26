@@ -81,7 +81,7 @@ export function Conversation({ msgs, side, onSend, placeholder, them, empty, tal
         <textarea ref={box} rows={1} value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder ?? "Write a message"} aria-label="Message"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
           className="min-h-[44px] flex-1 resize-none border border-border bg-card px-3 py-2.5 text-[15px] leading-[1.4] outline-none focus:border-primary" />
-        <button disabled={!text.trim() || !!sending} className="press h-[44px] bg-accent px-4 font-mono text-xs font-medium uppercase tracking-[0.08em] text-accent-foreground disabled:opacity-40">Send</button>
+        <button disabled={!text.trim() || !!sending} className="press h-[44px] bg-primary px-4 font-btn text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground disabled:opacity-40">Send</button>
       </form>
     </div>
   );

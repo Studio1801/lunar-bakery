@@ -43,7 +43,7 @@ function TrackPage() {
             <div className="a-arrive max-w-xl">
               <h1 className="font-serif text-5xl font-medium leading-[0.95] tracking-[-0.02em] text-foreground">We could not find this order</h1>
               <p className="mt-4 text-lg text-muted-foreground">Open the link from the device you ordered on, or message us and we will look it up.</p>
-              <a href="/order" className="press mt-8 inline-block bg-accent px-8 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-accent-foreground">Place an order »</a>
+              <a href="/order" className="press mt-8 inline-block bg-primary px-8 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground">Place an order »</a>
             </div>
           )}
         </main>
@@ -145,7 +145,7 @@ function Tracked({ o, pubDays, products, thread, token }: { o: MineOrder; pubDay
           </section>
 
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
-            <a href="/order" className="press border border-primary px-8 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-foreground hover:bg-primary hover:text-primary-foreground">Place another order</a>
+            <a href="/order" className="press border border-primary px-8 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-foreground hover:bg-primary hover:text-primary-foreground">Place another order</a>
             {canCancel && (
               <button onClick={() => void cancel()} className={`press text-sm ${arm ? "font-semibold text-destructive" : "text-destructive underline underline-offset-4"}`}>
                 {arm ? "Tap again to cancel your order" : "Cancel my order"}

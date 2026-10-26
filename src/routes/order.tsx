@@ -171,7 +171,7 @@ function OrderPage() {
           <div className="sticky top-24">
             <Slip lines={lines} pcs={pcs} total={total} date={date} time={time} name={name} note={note} />
             {err && <p key={err} className="a-rise mt-3 text-sm text-destructive">{err}</p>}
-            <button onClick={place} disabled={sending} className="press mt-4 w-full bg-accent py-4 font-mono font-medium uppercase tracking-[0.08em] text-accent-foreground hover:bg-accent/90 disabled:opacity-70">
+            <button onClick={place} disabled={sending} className="press mt-4 w-full bg-primary py-4 font-btn font-bold uppercase tracking-[0.12em] text-primary-foreground hover:bg-primary/90 disabled:opacity-70">
               {sending ? "Sending..." : pcs ? `Place order · ${money(total)} »` : "Place order »"}
             </button>
             <p className="mt-3 text-center text-xs text-muted-foreground">Pay when you collect. Nothing is charged online.</p>
@@ -186,7 +186,7 @@ function OrderPage() {
             <div key={pcs} className={`font-serif text-2xl text-foreground ${pcs ? "a-chip" : ""}`}>{money(total)}</div>
             <div className="text-xs text-muted-foreground">{pcs ? `${pcs} pieces` : "No boxes yet"}{date && time !== "" ? `, ${parse(date).toLocaleDateString("en-US", { weekday: "short" })} ${fmtTime(time)}` : ""}</div>
           </div>
-          <button onClick={place} disabled={sending} className="press bg-accent px-5 py-3 font-mono text-sm font-medium uppercase tracking-[0.08em] text-accent-foreground disabled:opacity-70">{sending ? "Sending..." : "Place order »"}</button>
+          <button onClick={place} disabled={sending} className="press bg-primary px-5 py-3 font-btn text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground disabled:opacity-70">{sending ? "Sending..." : "Place order »"}</button>
         </div>
       </div>
 
