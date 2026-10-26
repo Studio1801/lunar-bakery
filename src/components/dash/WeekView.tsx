@@ -14,7 +14,7 @@ type Panel = { kind: "write"; date: string; order?: Order | undefined } | { kind
 const WEEK = 7 * 864e5;
 const weekOf = (date: string) => Math.round((mondayOf(0, parse(date)).getTime() - mondayOf(0).getTime()) / WEEK);
 // One spring for the zoom, so opening and closing feel like the same movement.
-const ZOOM = { type: "spring" as const, stiffness: 230, damping: 30, mass: 0.9 };
+const ZOOM = { type: "spring" as const, stiffness: 260, damping: 33, mass: 0.9 };
 const boxes = (qty: number, pieces: number) => `${qty} box${qty > 1 ? "es" : ""} of ${pieces}`;
 const clock12 = (min: number) => `${Math.floor(min / 60) % 12 || 12}:${String(min % 60).padStart(2, "0")} ${min < 720 ? "am" : "pm"}`;
 const nowMin = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); };
@@ -23,6 +23,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
   const s = useStore();
   const [week, setWeek] = useState(0);
   const [zoom, setZoom] = useState<string | null>(null);
+  const [dir, setDir] = useState<"" | "from-left" | "from-right">("");
   const [panel, setPanel] = useState<Panel>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set()); // ticked during this visit, so the strike animates
   const [just, setJust] = useState<Set<string>>(new Set()); // new on the board, so it slides in
@@ -67,7 +68,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
     setPicked((p) => new Set(p).add(id));
     void dispatch({ t: "done", id, v }).then((r) => { if (!r.ok) toast(r.error); });
   };
-  const go = (n: number) => { if (n === week) return; setPicked(new Set()); setWeek(n); setZoom(null); };
+  const go = (n: number) => { if (n === week) return; setDir(n > week ? "from-right" : "from-left"); setPicked(new Set()); setWeek(n); setZoom(null); };
   const open = (o: Order) => { setWeek(weekOf(o.date)); setPanel({ kind: "write", date: o.date, order: o }); };
   // "Open order" from the Messages inbox.
   useEffect(() => onOpenOrder((id) => { const o = getState().orders.find((x) => x.id === id); if (o) open(o); }), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -108,7 +109,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <div className="font-serif text-xl text-foreground">{short(first)} to {short(last)}{week !== 0 && <span className="ml-2 text-base text-muted-foreground">{sub}</span>}</div>
+        <div key={`w${week}`} className="a-fade font-serif text-xl text-foreground">{short(first)} to {short(last)}{week !== 0 && <span className="ml-2 text-base text-muted-foreground">{sub}</span>}</div>
         <div className="flex items-center gap-4">
           {week !== 0 && <button onClick={() => go(0)} className="press text-sm underline underline-offset-4">This week</button>}
           <button onClick={() => setPanel({ kind: "write", date: week === 0 ? today : iso(days[0]!) })} className="press bg-primary px-5 py-3 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Add an order</button>
@@ -117,7 +118,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div key={week} className={`cards-in grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 ${dir}`}>
         {days.map((d) => {
           const k = iso(d), list = dayOrders(k), pcs = dayPieces(k), isToday = k === today;
           return (
@@ -232,7 +233,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3 sm:px-5">
+                  <div key={st} className="a-swap flex flex-wrap items-center gap-3 border-t border-border px-4 py-3 sm:px-5">
                     {st === "pending" && <>
                       <button onClick={() => go1({ t: "status", id: o.id, s: "confirm" }, `Confirmed ${o.name}. They can see it on their order page.`)} className="press min-h-11 bg-primary px-6 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground hover:bg-primary/90">Confirm</button>
                       <button onClick={() => open(o)} className="press min-h-11 px-3 text-sm underline underline-offset-4">Decline</button>
