@@ -81,14 +81,27 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
 
   return (
     <>
-      {(pending.length > 0 || unreadAll > 0) && (
-        <div role="status" className={`a-rise mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3.5 ${pending.length > 0 ? "heartbeat bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}>
-          {pending.length > 0 && (
-            <button onClick={() => { const o = pending[0]!; setWeek(weekOf(o.date)); setZoom(o.date); }} className="press text-left font-serif text-lg">
-              {pending.length} new online order{pending.length > 1 ? "s" : ""} to confirm <span className="underline underline-offset-4">Show me</span>
-            </button>
-          )}
-          {unreadAll > 0 && <button onClick={onMessages} className={`press ml-auto px-4 py-2 font-btn text-xs font-bold tracking-[0.12em] ${pending.length > 0 ? "bg-primary text-primary-foreground" : "bg-primary-foreground text-primary"}`}>{unreadAll} new message{unreadAll > 1 ? "s" : ""}</button>}
+      {pending.length > 0 && (() => {
+        const o = pending[0]!;
+        const ago = o.placed ? Math.max(0, Math.round((Date.now() - o.placed) / 60000)) : null;
+        const when = ago === null ? "" : ago < 1 ? "just now" : ago < 60 ? `${ago} min ago` : ago < 1440 ? `${Math.round(ago / 60)} hr ago` : "";
+        return (
+          <div role="alert" className="alert-bar a-rise mb-5 flex flex-wrap items-center gap-x-5 gap-y-3 px-5 py-4 text-primary">
+            <span className="alert-dot shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="font-serif text-xl font-semibold leading-tight">{pending.length === 1 ? "New online order, waiting for you" : `${pending.length} new online orders, waiting for you`}</p>
+              <p className="mt-0.5 truncate text-sm text-primary/80">
+                {o.name} · {parse(o.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {fmtTime(o.time)}{when ? ` · placed ${when}` : ""}{pending.length > 1 ? ` · and ${pending.length - 1} more` : ""}
+              </p>
+            </div>
+            <button onClick={() => { setWeek(weekOf(o.date)); setZoom(o.date); }} className="press relative z-10 bg-primary px-6 py-3 font-btn text-sm font-bold tracking-[0.12em] text-primary-foreground shadow-[0_6px_18px_-6px_rgb(22_34_61_/_0.6)] hover:bg-primary/90">Review now</button>
+          </div>
+        );
+      })()}
+      {unreadAll > 0 && (
+        <div role="status" className="a-rise mb-5 flex items-center justify-between gap-4 bg-primary px-5 py-3 text-primary-foreground">
+          <span className="font-serif text-lg">{unreadAll} new message{unreadAll > 1 ? "s" : ""} from customers</span>
+          <button onClick={onMessages} className="press bg-primary-foreground px-4 py-2 font-btn text-xs font-bold tracking-[0.12em] text-primary">Read</button>
         </div>
       )}
 
