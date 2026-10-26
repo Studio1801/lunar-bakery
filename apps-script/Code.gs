@@ -23,6 +23,14 @@ var VIEWS = {
 
 function setup() { tabs_(); }
 
+function sheet_(n) {
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName(n) || ss.insertSheet(n);
+  if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, VIEWS[n].length).setValues([VIEWS[n]]).setFontWeight("bold");
+  sh.setFrozenRows(1);
+  return sh;
+}
+
 function tabs_() {
   var ss = SpreadsheetApp.getActive();
   var st = ss.getSheetByName(STATE) || ss.insertSheet(STATE);
@@ -30,11 +38,7 @@ function tabs_() {
     st.getRange("A1:B1").setValues([["version", 0]]);
     st.getRange("A2").setValue("State, rebuilt by the website. Do not type in this tab.");
   }
-  Object.keys(VIEWS).forEach(function (n) {
-    var sh = ss.getSheetByName(n) || ss.insertSheet(n);
-    if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, VIEWS[n].length).setValues([VIEWS[n]]).setFontWeight("bold");
-    sh.setFrozenRows(1);
-  });
+  ["Orders", "Products"].forEach(function (n) { sheet_(n); });
   var oldMenu = ss.getSheetByName("Menu"); // the menu now lives in Products
   if (oldMenu) ss.deleteSheet(oldMenu);
   var old = ss.getSheetByName("Sheet1");
@@ -81,8 +85,12 @@ function doPost(e) {
 
 function hm_(m) { if (m == null) return ""; var h = Math.floor(m / 60); return (h % 12 || 12) + ":" + ("0" + (m % 60)).slice(-2) + (h < 12 ? " am" : " pm"); }
 
+// Closed, Days and Messages only exist while they have something in them.
+var OPTIONAL = { Closed: 1, Days: 1, Messages: 1 };
 function put_(name, rows) {
-  var sh = SpreadsheetApp.getActive().getSheetByName(name), w = VIEWS[name].length;
+  var ss = SpreadsheetApp.getActive(), w = VIEWS[name].length;
+  if (OPTIONAL[name] && !rows.length) { var gone = ss.getSheetByName(name); if (gone) ss.deleteSheet(gone); return; }
+  var sh = sheet_(name);
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, w).clearContent();
   if (rows.length) sh.getRange(2, 1, rows.length, w).setNumberFormat("@").setValues(rows);
 }
