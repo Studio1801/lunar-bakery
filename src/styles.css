@@ -78,25 +78,25 @@
 :root {
   --radius: 0.25rem;
   --background: #faf6ef; /* warm paper */
-  --foreground: #532c14; /* espresso brown, Lunar's text colour */
+  --foreground: #1f2d66; /* deep blue, from the Lunar logo */
   --card: #fffdf9;
-  --card-foreground: #532c14;
+  --card-foreground: #1f2d66;
   --popover: oklch(0.995 0.004 80);
   --popover-foreground: oklch(0.24 0.05 262);
-  --primary: #532c14;
-  --primary-foreground: #f8f1e5;
+  --primary: #1f2d66;
+  --primary-foreground: #faf6ef;
   --secondary: #f3eadc;
-  --secondary-foreground: #532c14;
+  --secondary-foreground: #1f2d66;
   --muted: #eadfcc;
-  --muted-foreground: #85634d;
-  --accent: #9e462c; /* rust, Lunar's button and note colour */
-  --accent-foreground: #f8f1e5;
+  --muted-foreground: #5d6a94;
+  --accent: #2f56b8; /* brighter blue for buttons and highlights */
+  --accent-foreground: #faf6ef;
   --brand-blue: oklch(0.4 0.12 265);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: #e5d8c6;
   --input: oklch(0.85 0.02 75);
-  --ring: #9e462c;
+  --ring: #2f56b8;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -281,7 +281,7 @@
 /* Highlighter, as on the Baklava board: a swipe of colour across the time, name or note */
 :root { --marker: #f5d78e; }
 .mark { cursor: pointer; background-image: linear-gradient(var(--marker), var(--marker)); background-repeat: no-repeat; background-position: left center; background-size: 0% 100%; transition: background-size .34s var(--ease-bar), color .2s ease .08s; }
-.mark.marked { background-size: 100% 100%; color: #532c14 !important; }
+.mark.marked { background-size: 100% 100%; color: #1f2d66 !important; }
 .note-circle.mark.marked { background-size: 100% 100%; }
 
 /* Cancelled and declined orders stay on the board for the record, quietly */

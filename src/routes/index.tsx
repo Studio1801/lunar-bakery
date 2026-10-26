@@ -79,17 +79,17 @@ function Home() {
       <main className="flex-grow">
         {/* 01 HERO */}
         <section id="hero" className="w-full">
-          <div className="w-full overflow-hidden" style={{ maxHeight: "60vh", minHeight: 280 }}>
+          <div className="w-full overflow-hidden" style={{ maxHeight: "22vh", minHeight: 110 }}>
             <motion.img initial={{ scale: 1.06, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
               src="/images/hero-natas.jpg" alt="A tray of freshly baked pastel de nata" fetchPriority="high"
-              className="h-full w-full object-cover" style={{ maxHeight: "60vh", minHeight: 280, objectPosition: "center 60%" }} />
+              className="h-full w-full object-cover" style={{ maxHeight: "22vh", minHeight: 110, objectPosition: "center 55%" }} />
           </div>
-          <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col items-center px-6 pb-16 pt-12 text-center md:pb-20 md:pt-16">
-            <motion.div variants={fadeInUp} className="mb-7 h-[3px] w-20 bg-primary" />
-            <motion.h1 variants={fadeInUp} className="mb-5 max-w-3xl font-serif text-5xl leading-[0.95] tracking-[-0.02em] md:text-7xl lg:text-8xl">
+          <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col items-center px-6 pb-12 pt-8 text-center md:pb-14 md:pt-10">
+            <motion.div variants={fadeInUp} className="mb-5 h-[3px] w-16 bg-primary" />
+            <motion.h1 variants={fadeInUp} className="mb-4 max-w-3xl font-serif text-[2.25rem] leading-[0.95] tracking-[-0.02em] md:text-[3.375rem] lg:text-[4.5rem]">
               French pastry, <span className="italic text-accent">Taiwanese soul.</span>
             </motion.h1>
-            <motion.p variants={fadeInUp} className="mb-10 max-w-md text-base leading-[1.45] text-primary/60 md:text-lg">
+            <motion.p variants={fadeInUp} className="mb-7 max-w-md text-base leading-[1.45] text-primary/60 md:text-lg">
               Hand-crafted seasonal pastries, found only if you're paying attention. San Francisco · Est. 2020.
             </motion.p>
             <motion.div variants={fadeInUp} className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
@@ -246,41 +246,41 @@ function OrderSection() {
   const list = s.products.map((p) => ({ ...p, on: p.sizes.filter((z) => z.on) })).filter((p) => p.on.length);
   const ready = mounted && sync !== "loading";
   return (
-    <section id="order" className="w-full scroll-mt-16 border-t border-border/40 bg-primary px-6 py-20 text-primary-foreground md:py-28">
+    <section id="order" className="w-full scroll-mt-16 border-t border-border/40 bg-background px-6 py-20 text-primary md:py-28">
       <div className="mx-auto max-w-[1200px]">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger} className="flex flex-col items-start gap-10 md:flex-row md:gap-16">
           <motion.div variants={fadeInUp} className="w-full shrink-0 md:w-5/12">
-            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.08em] text-primary-foreground/50">04</p>
+            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.08em] text-primary/50">04</p>
             <h2 className="mb-4 font-serif text-4xl tracking-[-0.01em] md:text-5xl">Order for pickup</h2>
-            <p className="mb-8 max-w-sm text-[15px] leading-[1.5] text-primary-foreground/70">
+            <p className="mb-8 max-w-sm text-[15px] leading-[1.5] text-primary/70">
               Choose your boxes, a day and a time. Baked the morning you collect, and we confirm with you directly. Pay when you pick up.
             </p>
-            <a href="/order" className={`${btn} bg-primary-foreground text-primary hover:bg-primary-foreground/90`}>Start an order »</a>
-            <p className="mt-6 text-sm text-primary-foreground/60">
-              Custom cake or catering? <a href="mailto:lunarbakerysf@gmail.com?subject=Custom%20cake" className="underline underline-offset-4 hover:text-primary-foreground">Email us</a>
+            <a href="/order" className={`${btn} bg-primary text-primary-foreground hover:bg-primary/90`}>Start an order »</a>
+            <p className="mt-6 text-sm text-primary/60">
+              Custom cake or catering? <a href="mailto:lunarbakerysf@gmail.com?subject=Custom%20cake" className="underline underline-offset-4 hover:text-primary">Email us</a>
             </p>
           </motion.div>
           <motion.div variants={fadeInUp} className="w-full md:w-7/12">
             {!ready ? (
-              <div className="space-y-px">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-24 bg-primary-foreground/5" />)}</div>
+              <div className="space-y-px">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-24 bg-primary/5" />)}</div>
             ) : (
-              <ul className="stagger divide-y divide-primary-foreground/15 border-y border-primary-foreground/15">
+              <ul className="stagger divide-y divide-primary/15 border-y border-primary/15">
                 {list.map((p) => (
                   <li key={p.id}>
                     <a href="/order" className="group flex items-center gap-5 py-4">
-                      {p.photo ? <img src={p.photo} alt="" loading="lazy" className="h-16 w-16 shrink-0 object-cover" /> : <span className="h-16 w-16 shrink-0 bg-primary-foreground/10" />}
+                      {p.photo ? <img src={p.photo} alt="" loading="lazy" className="h-16 w-16 shrink-0 object-cover" /> : <span className="h-16 w-16 shrink-0 bg-primary/10" />}
                       <span className="flex-1">
                         <span className="block font-serif text-2xl leading-tight">{p.name}</span>
-                        <span className="text-sm text-primary-foreground/60">Boxes of {p.on.map((z) => z.pieces).join(", ")}</span>
+                        <span className="text-sm text-primary/60">Boxes of {p.on.map((z) => z.pieces).join(", ")}</span>
                       </span>
                       <span className="text-right">
-                        <span className="block font-mono text-[11px] uppercase tracking-[0.1em] text-primary-foreground/50">from</span>
+                        <span className="block font-mono text-[11px] uppercase tracking-[0.1em] text-primary/50">from</span>
                         <span className="font-serif text-xl">{money(Math.min(...p.on.map((z) => z.price)))}</span>
                       </span>
                     </a>
                   </li>
                 ))}
-                {!list.length && <li className="py-6 text-primary-foreground/70">Everything is sold out right now. Follow us on Instagram for the next drop.</li>}
+                {!list.length && <li className="py-6 text-primary/70">Everything is sold out right now. Follow us on Instagram for the next drop.</li>}
               </ul>
             )}
           </motion.div>
