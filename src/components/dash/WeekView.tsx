@@ -125,12 +125,12 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
               style={{ opacity: zoom === k ? 0 : 1 }}
               className={`group/day flex min-h-[240px] flex-col bg-card shadow-[0_1px_0_rgb(22_34_61_/_0.04),0_12px_32px_-18px_rgb(22_34_61_/_0.28)] transition-shadow duration-300 hover:shadow-[0_1px_0_rgb(22_34_61_/_0.04),0_18px_40px_-16px_rgb(22_34_61_/_0.38)] ${isToday ? "border border-primary" : "border border-border"}`}>
               <button onClick={() => setZoom(k)} aria-label={`Open ${parse(k).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
-                className="flex items-baseline justify-between gap-3 border-b border-border px-5 py-4 text-left transition-colors hover:bg-secondary/60">
+                className={`flex items-baseline justify-between gap-3 border-b px-5 py-4 text-left transition-colors ${isToday ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-border bg-secondary/50 hover:bg-secondary"}`}>
                 <span className="font-btn">
-                  <span className="block text-sm font-bold text-muted-foreground">{d.toLocaleDateString("en-US", { weekday: "long" })}{isToday && <span className="ml-2 bg-accent px-1.5 py-0.5 text-xs font-bold text-accent-foreground">Today</span>}</span>
-                  <span className="block font-serif text-4xl leading-tight text-foreground">{short(d)}</span>
+                  <span className={`block text-sm font-bold ${isToday ? "text-primary-foreground/75" : "text-muted-foreground"}`}>{d.toLocaleDateString("en-US", { weekday: "long" })}{isToday && <span className="ml-2 bg-accent px-1.5 py-0.5 text-xs font-bold text-accent-foreground">Today</span>}</span>
+                  <span className="block font-serif text-4xl leading-tight">{short(d)}</span>
                 </span>
-                <span className="text-right font-btn text-[15px] leading-snug text-foreground/80">
+                <span className={`text-right font-btn text-[15px] leading-snug ${isToday ? "text-primary-foreground/85" : "text-foreground/80"}`}>
                   <span className="block font-bold">{s.closed[k] && !list.length ? "Closed to online" : `${list.length} order${list.length === 1 ? "" : "s"}`}</span>
                   <span className="block">{pcs} pieces</span>
                 </span>
@@ -146,18 +146,18 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
                           <span className={`text-xl font-bold leading-tight text-foreground ${dim ? "line-through" : ""}`}>{o.name}</span>
                           <span className="shrink-0 text-xl font-bold tabular-nums text-foreground">{clock12(o.time)}</span>
                         </span>
-                        <span className="mt-2 block space-y-1">
+                        <span className="mt-2.5 block space-y-1.5">
                           {o.items.map((i, n) => { const m = idx.get(i.code); return (
                             <span key={n} className="block text-[17px] leading-snug text-foreground">
-                              {m ? m.product.name : i.code}<span className="text-foreground/70"> · {m ? boxes(i.qty, m.size.pieces) : `${i.qty}`}</span>
+                              <b className="font-bold">{m ? m.product.name : i.code}</b><span className="text-foreground/70"> · {m ? boxes(i.qty, m.size.pieces) : `${i.qty}`}</span>
                             </span>
                           ); })}
                         </span>
-                        {o.note && <span className="mt-2.5 block bg-accent/15 px-3 py-2 text-[17px] leading-snug text-foreground"><b className="font-bold">Note: </b>{o.note}</span>}
+                        {o.note && <span className="mt-3 block bg-accent/20 px-3.5 py-2.5 text-[17px] leading-snug text-foreground"><b className="font-bold">Note: </b>{o.note}</span>}
                         <span className="mt-2.5 flex flex-wrap items-center gap-x-3 text-sm text-foreground/70">
                           <span>{o.source === "online" ? "From the website" : "Added by hand"}</span>
-                          {st === "pending" && <span className="bg-accent px-1.5 py-0.5 text-xs font-bold text-accent-foreground">New, to confirm</span>}
-                          {st === "ready" && <span className="font-bold text-foreground">Ready</span>}
+                          {st === "pending" && <span className="bg-accent px-2 py-0.5 text-xs font-bold text-accent-foreground">New, to confirm</span>}
+                          {st === "ready" && <span className="bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">Ready</span>}
                           {st === "picked" && <span className="font-bold">Picked up</span>}
                         </span>
                       </button>
