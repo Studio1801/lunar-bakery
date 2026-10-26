@@ -89,7 +89,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
         </div>
       </div>
 
-      <div role="tablist" aria-label="Day" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div role="tablist" aria-label="Day" className="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:hidden">
         {days.map((d) => {
           const k = iso(d), n = dayOrders(k).filter(isLive).length, wait = dayOrders(k).some((o) => o.pending && !o.cancelled), on = k === selDate;
           return (
@@ -104,7 +104,7 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
         })}
       </div>
 
-      <div key={selDate} className="a-fade mt-6">
+      <div key={selDate} className="a-fade mt-6 lg:mt-2">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div>
             <h2 className="font-serif text-3xl leading-tight text-foreground">{parse(selDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h2>
@@ -181,6 +181,44 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
           <button onClick={exportCsv} className="press text-muted-foreground underline underline-offset-4 hover:text-foreground">Export CSV</button>
         </div>
       </div>
+
+      <section className="mt-12 border-t-2 border-primary pt-6" aria-label="The whole week">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h3 className="font-serif text-2xl text-foreground">The whole week</h3>
+          <p className="text-sm text-muted-foreground">Tap a day or an order to open it above.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          {days.map((d) => {
+            const k = iso(d), list = dayOrders(k), pcs = dayPieces(k), on = k === selDate;
+            const pick = () => { setSel(k); window.scrollTo({ top: 0, behavior: "smooth" }); };
+            return (
+              <div key={k} className={`flex flex-col border bg-card ${on ? "border-primary" : "border-border"}`}>
+                <button onClick={pick} className={`px-3 py-3 text-left ${on ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
+                  <span className={`block text-xs ${on ? "opacity-80" : "text-muted-foreground"}`}>{k === today ? "Today" : d.toLocaleDateString("en-US", { weekday: "long" })}</span>
+                  <span className="block font-serif text-xl leading-tight">{short(d)}</span>
+                  <span className={`block text-sm ${on ? "opacity-90" : "text-muted-foreground"}`}>{s.closed[k] && !list.length ? "Closed" : `${pcs} pieces`}</span>
+                </button>
+                <ul className="flex-1 divide-y divide-border">
+                  {list.map((o) => {
+                    const st = statusOf(o, s.done), h = Math.floor(o.time / 60), mm = String(o.time % 60).padStart(2, "0");
+                    return (
+                      <li key={o.id}>
+                        <button onClick={pick} className={`flex w-full items-baseline gap-2 px-3 py-2 text-left text-sm hover:bg-secondary ${st === "picked" || st === "cancelled" || st === "declined" ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                          <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground">{h % 12 || 12}:{mm} {h < 12 ? "am" : "pm"}</span>
+                          <span className="min-w-0 flex-1 truncate font-semibold">{o.name}</span>
+                          {st === "pending" && <span aria-label="Needs confirming" className="h-2 w-2 shrink-0 rounded-full bg-accent" />}
+                          {st === "ready" && <span className="shrink-0 text-xs text-accent">ready</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {list.length === 0 && <li className="px-3 py-3 text-sm italic text-muted-foreground">{s.closed[k] ? "Closed" : "Nothing yet"}</li>}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <Drawer open={!!active} onClose={close}>
         {active?.kind === "write" && (active.order
