@@ -27,3 +27,11 @@ npm run dev
 - TypeScript
 - React
 - Tailwind CSS
+
+## Database: Google Sheet
+
+`apps-script/Code.gs` turns the Lunar Bakery Database sheet into the shop's database
+(same idea as the Baklava Story sheet). Setup is in the comment at the top of that file.
+Vercel env vars: `SHEETS_URL` (the Web app /exec URL), `SHEETS_SECRET` (same value as the
+script property `LUNAR_SECRET`), `LUNAR_STAFF_KEY` (the dashboard password).
+Without the sheet vars the site falls back to Postgres.

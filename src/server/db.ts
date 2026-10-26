@@ -1,6 +1,7 @@
 import pg from "pg";
 import { applyOp, type Op } from "@/lib/ops";
 import { seed, type State } from "@/lib/store";
+import { sheetLoad, sheetSave, sheetVersion, sheetsEnabled } from "./sheets";
 
 /*
  * The shop's shared data, kept as one row in Postgres.
@@ -20,7 +21,9 @@ function dbUrl(): string | undefined {
   const key = Object.keys(env).find((k) => /(^|_)(DATABASE_URL|POSTGRES_URL)$/.test(k) && /^postgres(ql)?:\/\//.test(env[k] || ""));
   return key ? env[key] : undefined;
 }
-export const dbEnabled = () => !!dbUrl();
+const pgEnabled = () => !!dbUrl();
+/** The Google Sheet is the database when SHEETS_URL and SHEETS_SECRET are set. Postgres is the fallback. */
+export const dbEnabled = () => sheetsEnabled() || pgEnabled();
 
 function getPool() {
   if (!pool) {
@@ -40,17 +43,20 @@ function setup() {
 }
 
 export async function readStore(): Promise<{ state: State; version: number }> {
+  if (sheetsEnabled()) return sheetRead();
   await setup();
   const r = await getPool().query(`SELECT version, state FROM lunar_store WHERE id = 1`);
   return { version: Number(r.rows[0].version), state: r.rows[0].state as State };
 }
 export async function readVersion(): Promise<number> {
+  if (sheetsEnabled()) return sheetVersion();
   await setup();
   const r = await getPool().query(`SELECT version FROM lunar_store WHERE id = 1`);
   return Number(r.rows[0].version);
 }
 /** Lock the shop, apply one change, save. Two devices changing things at once never overwrite each other. */
 export async function mutate(fn: (s: State) => { state: State } | { error: string }): Promise<{ state: State; version: number; error?: string }> {
+  if (sheetsEnabled()) return sheetMutate(fn);
   await setup();
   const client = await getPool().connect();
   try {
@@ -72,3 +78,37 @@ export async function mutate(fn: (s: State) => { state: State } | { error: strin
   }
 }
 export const writeOp = (op: Op) => mutate((s) => applyOp(s, op));
+
+// ---- Google Sheet backend ----
+// Sheets calls take a second or two, and every open page polls. Reads are shared for a moment
+// so a busy day does not hammer the sheet; writes always go through a fresh read.
+let cache: { at: number; value: { state: State; version: number } } | null = null;
+let inflight: Promise<{ state: State; version: number }> | null = null;
+const FRESH = 1500;
+
+async function sheetFetch(): Promise<{ state: State; version: number }> {
+  const r = await sheetLoad();
+  if (r.state && r.version > 0) return { state: r.state, version: r.version };
+  // First run: put the starting shop into the sheet.
+  const first = seed();
+  const w = await sheetSave(0, first);
+  if (w.ok) return { state: first, version: w.version };
+  return sheetFetch();
+}
+async function sheetRead() {
+  if (cache && Date.now() - cache.at < FRESH) return cache.value;
+  inflight ??= sheetFetch().then((v) => { cache = { at: Date.now(), value: v }; return v; }).finally(() => { inflight = null; });
+  return inflight;
+}
+async function sheetMutate(fn: (s: State) => { state: State } | { error: string }): Promise<{ state: State; version: number; error?: string }> {
+  for (let tries = 0; tries < 5; tries++) {
+    const cur = await sheetFetch();
+    const res = fn(cur.state);
+    if ("error" in res) return { ...cur, error: res.error };
+    if (res.state === cur.state) return cur;
+    const w = await sheetSave(cur.version, res.state);
+    if (w.ok) { const value = { state: res.state, version: w.version }; cache = { at: Date.now(), value }; return value; }
+    cache = null; // someone else saved first; read again and redo this change on top of theirs
+  }
+  throw new Error("The sheet stayed busy. Try again.");
+}
