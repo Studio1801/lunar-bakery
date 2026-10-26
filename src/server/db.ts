@@ -37,7 +37,7 @@ function setup() {
   if (!ready) ready = (async () => {
     const db = getPool();
     await db.query(`CREATE TABLE IF NOT EXISTS lunar_store (id int PRIMARY KEY, version bigint NOT NULL, state jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())`);
-    await db.query(`INSERT INTO lunar_store (id, version, state) VALUES (1, 1, $1) ON CONFLICT (id) DO NOTHING`, [JSON.stringify(seed())]);
+    await db.query(`INSERT INTO lunar_store (id, version, state) VALUES (1, 1, $1) ON CONFLICT (id) DO NOTHING`, [JSON.stringify(seed(true))]);
   })().catch((e) => { ready = null; throw e; });
   return ready;
 }
@@ -88,9 +88,13 @@ const FRESH = 1500;
 
 async function sheetFetch(): Promise<{ state: State; version: number }> {
   const r = await sheetLoad();
-  if (r.state && r.version > 0) return { state: r.state, version: r.version };
+  if (r.state && r.version > 0) {
+    // Older saves carried a separate seasonal menu. Products now say which seasons they are on.
+    const { menu: _m, season: _s, ...state } = r.state as State & { menu?: unknown; season?: unknown };
+    return { state, version: r.version };
+  }
   // First run: put the starting shop into the sheet.
-  const first = seed();
+  const first = seed(true);
   const w = await sheetSave(0, first);
   if (w.ok) return { state: first, version: w.version };
   return sheetFetch();

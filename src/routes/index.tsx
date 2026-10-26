@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { DAILY_LIMIT, SEASONS, dayHours, fmtTime, iso, money, parse, useCustomerSync, usePublic, useSyncStatus, type Season } from "@/lib/store";
+import { DAILY_LIMIT, SEASONS, dayHours, fromLine, inSeason, seasonNow, fmtTime, iso, money, parse, useCustomerSync, usePublic, useSyncStatus, type Season } from "@/lib/store";
 import { ChatBubble } from "@/components/site/ChatBubble";
 
 export const Route = createFileRoute("/")({
@@ -36,7 +36,7 @@ function Home() {
   useCustomerSync();
   const pub = usePublic();
   const [picked, setPicked] = useState<Season | null>(null);
-  const season: Season = picked ?? pub.season;
+  const season: Season = picked ?? seasonNow();
   // Arriving from another page with a #section link: glide to it once the page has drawn.
   useEffect(() => {
     const h = window.location.hash.slice(1);
@@ -97,11 +97,11 @@ function Home() {
               </div>
             </motion.div>
             <motion.div key={season} initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {pub.menu[season].filter((item) => item.name.trim()).map((item) => (
+              {pub.products.filter((item) => item.name.trim() && inSeason(item, season)).map((item) => (
                 <motion.div key={item.id} variants={fadeInUp} className="group flex flex-col">
                   <div className="relative aspect-square overflow-hidden bg-muted">
                     {item.photo && <img src={item.photo} alt={item.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />}
-                    {item.price && <span className="absolute bottom-3 right-3 border border-border/60 bg-background px-2 py-1 text-xs font-semibold tracking-wide">{item.price}</span>}
+                    {fromLine(item) && <span className="absolute bottom-3 right-3 bg-background px-2 py-1 text-xs font-semibold tracking-wide">{fromLine(item)}</span>}
                   </div>
                   <p className="mt-3 text-sm leading-snug">{item.name}</p>
                 </motion.div>

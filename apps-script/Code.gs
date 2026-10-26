@@ -8,15 +8,14 @@
  *   4. Put the /exec URL in Vercel as SHEETS_URL and the secret as SHEETS_SECRET.
  *
  * The "State" tab is what the website reads and writes (do not type in it).
- * Orders, Products, Menu, Closed, Days and Messages are rebuilt from it on every
+ * Orders, Products (the menu), Closed, Days and Messages are rebuilt from it on every
  * change so Jennie can read, filter and print them. Edit the website, not these tabs.
  */
 var STATE = "State";
 var CHUNK = 40000;
 var VIEWS = {
   Orders: ["id", "date", "time", "name", "phone", "items", "note", "status", "source", "pieces"],
-  Products: ["code", "name", "pieces", "price", "on"],
-  Menu: ["season", "position", "name", "price", "on site now"],
+  Products: ["code", "name", "pieces", "price", "on", "seasons"],
   Closed: ["date"],
   Days: ["date", "place", "from", "to"],
   Messages: ["when", "customer", "phone", "from", "message"]
@@ -36,6 +35,8 @@ function tabs_() {
     if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, VIEWS[n].length).setValues([VIEWS[n]]).setFontWeight("bold");
     sh.setFrozenRows(1);
   });
+  var oldMenu = ss.getSheetByName("Menu"); // the menu now lives in Products
+  if (oldMenu) ss.deleteSheet(oldMenu);
   var old = ss.getSheetByName("Sheet1");
   if (old && old.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(old);
   return st;
@@ -91,7 +92,8 @@ function views_(s) {
   var names = {}, sizes = {};
   (s.products || []).forEach(function (p) { (p.sizes || []).forEach(function (z) { names[z.code] = p.name; sizes[z.code] = z.pieces; }); });
   put_("Products", (s.products || []).reduce(function (a, p) {
-    return a.concat((p.sizes || []).map(function (z) { return [z.code, p.name, z.pieces, z.price, z.on ? "yes" : "no"]; }));
+    var se = p.seasons ? p.seasons.join(", ") : "all year";
+    return a.concat((p.sizes || []).map(function (z) { return [z.code, p.name, z.pieces, z.price, z.on ? "yes" : "no", se]; }));
   }, []));
   var done = s.done || {};
   put_("Orders", (s.orders || []).slice().sort(function (a, b) { return (a.date + ("0000" + a.time).slice(-4)) < (b.date + ("0000" + b.time).slice(-4)) ? -1 : 1; }).map(function (o) {
@@ -100,11 +102,6 @@ function views_(s) {
     var status = o.cancelled ? "cancelled" : o.declined ? "declined" : o.pending ? "pending" : done[o.id] ? "picked up" : o.ready ? "ready" : "confirmed";
     return [o.id, o.date, hm_(o.time), o.name, o.phone, items, o.note || "", status, o.source, pcs];
   }));
-  var m = s.menu || {}, now = s.season || "summer", mrows = [];
-  ["spring", "summer", "fall", "winter"].forEach(function (k) {
-    (m[k] || []).forEach(function (it, n) { mrows.push([k, n + 1, it.name, it.price, k === now ? "yes" : ""]); });
-  });
-  put_("Menu", mrows);
   put_("Closed", Object.keys(s.closed || {}).filter(function (d) { return s.closed[d]; }).sort().map(function (d) { return [d]; }));
   put_("Days", Object.keys(s.days || {}).sort().map(function (d) { var x = s.days[d]; return [d, x.place || "", hm_(x.from), hm_(x.to)]; }));
   var msgs = [];

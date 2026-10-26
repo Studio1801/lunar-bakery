@@ -1,5 +1,5 @@
 import { applyOp } from "./ops";
-import { isLive, menuOf, orderPieces, seasonOf, sizeIndex, uid, type Mine, type Order, type PublicView, type State, type Thread } from "./store";
+import { isLive, orderPieces, sizeIndex, uid, type Mine, type Order, type PublicView, type State, type Thread } from "./store";
 
 /*
  * The customer side of the shop. These are the only things a customer can do,
@@ -16,7 +16,7 @@ export function publicView(s: State): PublicView {
   const idx = sizeIndex(s.products);
   const load: Record<string, number> = {};
   s.orders.forEach((o) => { if (isLive(o)) load[o.date] = (load[o.date] ?? 0) + orderPieces(o, idx); });
-  return { products: s.products, closed: s.closed, days: s.days ?? {}, load, menu: menuOf(s), season: seasonOf(s) };
+  return { products: s.products, closed: s.closed, days: s.days ?? {}, load };
 }
 
 export function mineView(s: State, keys: { orders: { id: string; token: string }[]; threads: { id: string; token: string }[] }): Mine {

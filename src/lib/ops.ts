@@ -1,4 +1,4 @@
-import { DAILY_LIMIT, type Menu, type MenuItem, type Season, fmtTime, isLive, orderPieces, parse, sizeIndex, uid, type DayInfo, type Order, type Product, type State, type Thread } from "./store";
+import { DAILY_LIMIT, type Season, fmtTime, isLive, orderPieces, parse, sizeIndex, uid, type DayInfo, type Order, type Product, type State, type Thread } from "./store";
 
 /*
  * Every change the bakery makes is one of these small "operations".
@@ -16,8 +16,7 @@ export type Op =
   | { t: "status"; id: string; s: "confirm" | "ready" | "decline" | "unready"; reason?: string }
   | { t: "reply"; thread: string; text: string }
   | { t: "seen"; thread: string }
-  | { t: "day"; date: string; info: DayInfo }
-  | { t: "menu"; menu: Menu; season: Season };
+  | { t: "day"; date: string; info: DayInfo };
 
 const SEASON_KEYS: Season[] = ["spring", "summer", "fall", "winter"];
 export type Result = { state: State } | { error: string };
@@ -66,8 +65,10 @@ export function applyOp(s: State, op: Op): Result {
       if (op.v) closed[op.date] = true; else delete closed[op.date];
       return { state: { ...s, closed } };
     }
-    case "products":
-      return { state: { ...s, products: op.products } };
+    case "products": {
+      const products = op.products.map((p) => ({ ...p, seasons: Array.isArray(p.seasons) ? SEASON_KEYS.filter((k) => p.seasons!.includes(k)) : undefined }));
+      return { state: { ...s, products } };
+    }
     case "status": {
       const o = s.orders.find((x) => x.id === op.id);
       if (!o) return { error: "That order is no longer here." };
@@ -104,11 +105,6 @@ export function applyOp(s: State, op: Op): Result {
       if (!th || th.staffSeen === th.msgs.length) return { state: s };
       return { state: { ...s, threads: { ...s.threads, [th.id]: { ...th, staffSeen: th.msgs.length } } } };
     }
-    case "menu": {
-      const clean = (list: MenuItem[]): MenuItem[] => (Array.isArray(list) ? list : []).slice(0, 24).map((i) => ({ id: String(i.id || uid()).slice(0, 40), name: String(i.name ?? "").slice(0, 80), price: String(i.price ?? "").slice(0, 12), photo: typeof i.photo === "string" && i.photo.length <= 400_000 ? i.photo : undefined }));
-      const menu: Menu = { spring: clean(op.menu.spring), summer: clean(op.menu.summer), fall: clean(op.menu.fall), winter: clean(op.menu.winter) };
-      return { state: { ...s, menu, season: SEASON_KEYS.includes(op.season) ? op.season : "summer" } };
-    }
     case "day": {
       const days = { ...(s.days ?? {}) };
       const info: DayInfo = { place: op.info.place?.slice(0, 120) || undefined, from: op.info.from, to: op.info.to };
@@ -122,7 +118,7 @@ export function applyOp(s: State, op: Op): Result {
 // A light shape check for anything arriving from the internet.
 export function isOp(x: unknown): x is Op {
   if (!x || typeof x !== "object") return false;
-  const o = x as { t?: unknown; order?: unknown; id?: unknown; v?: unknown; date?: unknown; products?: unknown; menu?: unknown; season?: unknown; s?: unknown; thread?: unknown; text?: unknown; info?: unknown };
+  const o = x as { t?: unknown; order?: unknown; id?: unknown; v?: unknown; date?: unknown; products?: unknown; s?: unknown; thread?: unknown; text?: unknown; info?: unknown };
   const isOrder = (v: unknown) => !!v && typeof v === "object" && typeof (v as Order).id === "string" && typeof (v as Order).date === "string" && Array.isArray((v as Order).items) && (v as Order).items.length <= 50;
   switch (o.t) {
     case "add": case "update": return isOrder(o.order);
@@ -134,7 +130,6 @@ export function isOp(x: unknown): x is Op {
     case "reply": return typeof o.thread === "string" && typeof o.text === "string";
     case "seen": return typeof o.thread === "string";
     case "day": return typeof o.date === "string" && !!o.info && typeof o.info === "object";
-    case "menu": { const m = o.menu as Record<string, unknown> | undefined; return !!m && typeof m === "object" && SEASON_KEYS.every((k) => Array.isArray(m[k])) && SEASON_KEYS.includes(o.season as Season); }
     default: return false;
   }
 }

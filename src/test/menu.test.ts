@@ -1,27 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { applyOp, isOp } from "@/lib/ops";
-import { DEFAULT_MENU, seed } from "@/lib/store";
-import { publicView } from "@/lib/shop";
+import { fromLine, inSeason, seasonNow, seed } from "@/lib/store";
 
-describe("seasonal menu", () => {
-  it("shows the default menu until the bakery changes it", () => {
-    const v = publicView(seed());
-    expect(v.season).toBe("summer");
-    expect(v.menu.summer[0]?.name).toBe("Pastel de Nata");
+describe("products by season", () => {
+  it("offers a product all year until seasons are set", () => {
+    const p = seed(true).products[0]!;
+    expect(inSeason(p, "winter")).toBe(true);
+    expect(fromLine(p)).toBe("6 for $30");
   });
-  it("saves a changed season and reaches the public view", () => {
-    const menu = { ...DEFAULT_MENU, fall: [{ id: "a", name: "Pumpkin Kouign", price: "$9" }] };
-    const op = { t: "menu" as const, menu, season: "fall" as const };
+  it("saves seasons and filters", () => {
+    const s = seed(true);
+    const products = s.products.map((p, i) => (i === 0 ? { ...p, seasons: ["fall" as const] } : p));
+    const op = { t: "products" as const, products };
     expect(isOp(op)).toBe(true);
-    const r = applyOp(seed(), op);
+    const r = applyOp(s, op);
     if ("error" in r) throw new Error(r.error);
-    const v = publicView(r.state);
-    expect(v.season).toBe("fall");
-    expect(v.menu.fall).toHaveLength(1);
-    expect(v.menu.summer).toHaveLength(4);
+    expect(inSeason(r.state.products[0]!, "fall")).toBe(true);
+    expect(inSeason(r.state.products[0]!, "summer")).toBe(false);
   });
-  it("rejects a malformed menu", () => {
-    expect(isOp({ t: "menu", menu: { spring: [] }, season: "fall" })).toBe(false);
-    expect(isOp({ t: "menu", menu: DEFAULT_MENU, season: "monsoon" })).toBe(false);
+  it("starts the real shop with no made-up orders", () => {
+    expect(seed(true).orders).toHaveLength(0);
+    expect(seasonNow(new Date(2026, 9, 26))).toBe("fall");
   });
 });

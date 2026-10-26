@@ -1,6 +1,21 @@
 import { useEffect, useState } from "react";
 import { toast } from "./Toast";
-import { dispatch, uid, useStore, type Product } from "@/lib/store";
+import { SEASONS, dispatch, uid, useStore, type Product, type Season } from "@/lib/store";
+
+// Phone photos are huge. Shrink them so the site and the sheet stay quick.
+async function shrink(file: File): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("unreadable")); i.src = url; });
+    const k = Math.min(1, 720 / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * k));
+    c.height = Math.max(1, Math.round(img.height * k));
+    c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.8);
+  } finally { URL.revokeObjectURL(url); }
+}
+const ALL = SEASONS.map((x) => x.key);
 
 export function ProductsView() {
   const s = useStore();
@@ -10,14 +25,15 @@ export function ProductsView() {
   useEffect(() => setDraft(s.products), [s.products]);
   const dirty = JSON.stringify(draft) !== JSON.stringify(s.products);
   const upd = (pid: string, fn: (p: Product) => Product) => setDraft(draft.map((p) => (p.id === pid ? fn(p) : p)));
-  const photo = (pid: string, f?: File) => { if (!f) return; const r = new FileReader(); r.onload = () => upd(pid, (p) => ({ ...p, photo: String(r.result) })); r.readAsDataURL(f); };
+  const photo = (pid: string, f?: File) => { if (!f) return; shrink(f).then((d) => upd(pid, (p) => ({ ...p, photo: d }))).catch(() => toast("Could not read that photo.")); };
+  const flip = (pid: string, k: Season) => upd(pid, (p) => { const now = p.seasons ?? ALL; return { ...p, seasons: ALL.filter((x) => (x === k ? !now.includes(x) : now.includes(x))) }; });
 
   return (
     <div className="border border-primary bg-card p-6">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-serif text-2xl text-foreground">Products</h2>
-          <p className="text-sm text-muted-foreground">What the order page offers. Edits go live when you press Save changes.</p>
+          <h2 className="font-serif text-2xl text-foreground">Menu</h2>
+          <p className="text-sm text-muted-foreground">Everything you sell. Pick the seasons each one is on and it shows on the website that season. Edits go live when you press Save changes.</p>
         </div>
         <div className="flex gap-2">
           {dirty && <button onClick={() => setDraft(s.products)} className="press a-rise px-4 py-3 underline">Discard</button>}
@@ -37,7 +53,12 @@ export function ProductsView() {
                 <input value={p.name} onChange={(e) => upd(p.id, (x) => ({ ...x, name: e.target.value }))} className="w-full bg-transparent font-serif text-2xl text-foreground outline-none" />
                 <button onClick={() => (sure === p.id ? (setDraft(draft.filter((x) => x.id !== p.id)), setSure(null)) : setSure(p.id))} className={`press shrink-0 text-xs ${sure === p.id ? "bg-destructive px-2 py-1 font-semibold text-destructive-foreground" : "text-muted-foreground underline"}`}>{sure === p.id ? "Tap again" : "remove"}</button>
               </div>
-              <div className="mt-2 grid grid-cols-[48px_1fr_80px_40px_20px] gap-2 border-b border-border pb-1 text-xs font-semibold text-muted-foreground"><span>Pieces</span><span>Code</span><span>Price</span><span /><span /></div>
+              <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Seasons">
+                {SEASONS.map(({ key, label }) => { const on = (p.seasons ?? ALL).includes(key); return (
+                  <button key={key} onClick={() => flip(p.id, key)} aria-pressed={on} className={`press-sm border px-3 py-1 text-xs font-btn font-bold tracking-[0.08em] ${on ? "border-primary bg-primary text-primary-foreground" : "border-primary/30 text-muted-foreground"}`}>{label}</button>
+                ); })}
+              </div>
+              <div className="mt-3 grid grid-cols-[48px_1fr_80px_40px_20px] gap-2 border-b border-border pb-1 text-xs font-semibold text-muted-foreground"><span>Pieces</span><span>Code</span><span>Price</span><span /><span /></div>
               {p.sizes.map((z) => {
                 const set = (patch: Partial<typeof z>) => upd(p.id, (x) => ({ ...x, sizes: x.sizes.map((y) => (y.id === z.id ? { ...y, ...patch } : y)) }));
                 return (
@@ -55,7 +76,7 @@ export function ProductsView() {
           </div>
         ))}
       </div>
-      <p className="mt-4 max-w-lg text-sm text-muted-foreground">Each card is one product with its sizes. Switch a size off to mark it sold out and hide it from the order page. Removing keeps old orders as they were.</p>
+      <p className="mt-4 max-w-lg text-sm text-muted-foreground">Each card is one item with its sizes. The season buttons decide where it shows on the home page (none selected hides it there, but it can still be ordered). Switch a size off to mark it sold out. Removing keeps old orders as they were.</p>
     </div>
   );
 }

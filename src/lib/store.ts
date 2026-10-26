@@ -3,7 +3,7 @@ import { applyOp, type Op } from "./ops";
 import { applyCustomer, mineView, publicView, type COp } from "./shop";
 
 export type Size = { id: string; pieces: number; code: string; price: number; on: boolean };
-export type Product = { id: string; name: string; photo?: string | undefined; sizes: Size[] };
+export type Product = { id: string; name: string; photo?: string | undefined; seasons?: Season[] | undefined; sizes: Size[] };
 export type Item = { code: string; qty: number };
 export type Order = {
   id: string;
@@ -32,21 +32,14 @@ export const SEASONS: { key: Season; label: string }[] = [
   { key: "fall", label: "Fall" },
   { key: "winter", label: "Winter" },
 ];
-/** One thing on a season's homepage menu. Price is shown as written, like "$6". */
-export type MenuItem = { id: string; name: string; price: string; photo?: string | undefined };
-export type Menu = Record<Season, MenuItem[]>;
-const mi = (season: string, n: number, name: string, price: string, photo: string): MenuItem => ({ id: `${season}-${n}`, name, price, photo });
-export const DEFAULT_MENU: Menu = {
-  spring: [mi("spring", 1, "Strawberry Mochi Tart", "$7", "/images/gift-box.jpg"), mi("spring", 2, "Matcha Croissant", "$6", "/images/natas-kouigns.jpg"), mi("spring", 3, "Cherry Blossom Financier", "$5", "/images/kouign-tray.jpg"), mi("spring", 4, "Earl Grey Kouign-Amann", "$8", "/images/kouign-gold.jpg")],
-  summer: [mi("summer", 1, "Pastel de Nata", "$6", "/images/hero-natas.jpg"), mi("summer", 2, "Kouign-Amann", "$7", "/images/kouign-tray.jpg"), mi("summer", 3, "Natas & Kouigns", "$6", "/images/natas-kouigns.jpg"), mi("summer", 4, "Kouign with Gold", "$8", "/images/kouign-gold.jpg")],
-  fall: [mi("fall", 1, "Taro Puff", "$6", "/images/natas-kouigns.jpg"), mi("fall", 2, "Osmanthus Madeleine", "$5", "/images/kouign-gold.jpg"), mi("fall", 3, "Chestnut Mont Blanc", "$9", "/images/gift-box.jpg"), mi("fall", 4, "Black Sesame Kouign-Amann", "$8", "/images/kouign-tray.jpg")],
-  winter: [mi("winter", 1, "Tangerine Cake", "$7", "/images/gift-box.jpg"), mi("winter", 2, "Red Bean Danish", "$6", "/images/kouign-tray.jpg"), mi("winter", 3, "Longan Bun", "$5", "/images/natas-kouigns.jpg"), mi("winter", 4, "Yuja Éclair", "$7", "/images/kouign-gold.jpg")],
-};
-export const menuOf = (s: { menu?: Menu | undefined }): Menu => s.menu ?? DEFAULT_MENU;
-export const seasonOf = (s: { season?: Season | undefined }): Season => s.season ?? "summer";
-export type State = { products: Product[]; orders: Order[]; done: Record<string, boolean>; closed: Record<string, boolean>; days?: Record<string, DayInfo>; threads?: Record<string, Thread>; menu?: Menu; season?: Season };
+export const seasonNow = (d: Date = new Date()): Season => { const m = d.getMonth(); return m >= 2 && m <= 4 ? "spring" : m >= 5 && m <= 7 ? "summer" : m >= 8 && m <= 10 ? "fall" : "winter"; };
+/** A product with no seasons set is offered all year. */
+export const inSeason = (p: Product, season: Season) => !p.seasons || p.seasons.includes(season);
+/** The line under a product on the homepage: its first size that is on sale, like "6 for $30". */
+export const fromLine = (p: Product) => { const z = p.sizes.find((x) => x.on); return z ? `${z.pieces} for $${z.price}` : ""; };
+export type State = { products: Product[]; orders: Order[]; done: Record<string, boolean>; closed: Record<string, boolean>; days?: Record<string, DayInfo>; threads?: Record<string, Thread> };
 /** What anyone may see: the menu, open days, pop-up places and how full each day is. Never names or phone numbers. */
-export type PublicView = { products: Product[]; closed: Record<string, boolean>; days: Record<string, DayInfo>; load: Record<string, number>; menu: Menu; season: Season };
+export type PublicView = { products: Product[]; closed: Record<string, boolean>; days: Record<string, DayInfo>; load: Record<string, number> };
 /** What one customer may see: only their own orders and conversations. */
 export type MineOrder = Order & { picked: boolean };
 export type Mine = { orders: MineOrder[]; threads: Thread[] };
@@ -127,8 +120,9 @@ function seedOrders(): Order[] {
   });
 }
 
-export function seed(): State {
-  const orders = seedOrders();
+/** `clean` is the real shop: products only. Without it you also get made-up orders, for demos and local preview. */
+export function seed(clean = false): State {
+  const orders = clean ? [] : seedOrders();
   const done: Record<string, boolean> = {};
   const today = iso(new Date());
   orders.forEach((o, i) => { if (o.date < today && i % 2 === 0) done[o.id] = true; });

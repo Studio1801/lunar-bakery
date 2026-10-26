@@ -7,7 +7,6 @@ import { Toaster, toast } from "@/components/dash/Toast";
 import { WeekView } from "@/components/dash/WeekView";
 import { HistoryView } from "@/components/dash/HistoryView";
 import { ProductsView } from "@/components/dash/ProductsView";
-import { MenuView } from "@/components/dash/MenuView";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -111,7 +110,7 @@ function Login({ onLogin, expired }: { onLogin: (u: string) => void; expired: bo
   );
 }
 
-const TABS = ["Week", "Messages", "History", "Menu", "Products"] as const;
+const TABS = ["Week", "Messages", "History", "Menu"] as const;
 type Tab = (typeof TABS)[number];
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   useStaffSync();
@@ -193,8 +192,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {shown === "Week" && <WeekView numbersOpen={numbers} setNumbersOpen={setNumbers} onMessages={() => switchTab("Messages")} />}
           {shown === "Messages" && <Inbox />}
           {shown === "History" && <HistoryView />}
-          {shown === "Menu" && <MenuView />}
-          {shown === "Products" && <ProductsView />}
+          
+          {shown === "Menu" && <ProductsView />}
         </div>
       </div>
       <Toaster />
