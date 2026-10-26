@@ -14,9 +14,13 @@ const dayLabel = (at: number) => {
   return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 };
 
-export function Conversation({ msgs, side, onSend, placeholder, them, empty, tall }: {
+export function Conversation({ msgs, side, onSend, placeholder, them, empty, tall, soft, chips }: {
   msgs: Msg[]; side: "customer" | "bakery"; onSend: (text: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   placeholder?: string; them: string; empty?: string; tall?: boolean;
+  /** Rounder bubbles and a round send button, for the website chat. */
+  soft?: boolean;
+  /** Quick replies shown above the message box. */
+  chips?: { label: string; pick: () => void }[];
 }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export function Conversation({ msgs, side, onSend, placeholder, them, empty, tal
             <div key={m.id}>
               {showDay && <div className="py-2 text-center font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">{d}</div>}
               <div className={`flex ${mine ? "justify-end" : "justify-start"} ${fresh === m.id ? "a-rise" : ""}`}>
-                <div className={`max-w-[82%] px-3.5 py-2 text-[15px] leading-[1.4] ${mine ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground"}`}>
+                <div className={`max-w-[82%] px-3.5 py-2 text-[15px] leading-[1.4] ${soft ? "rounded-2xl" : ""} ${mine ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground"}`}>
                   <p className="whitespace-pre-wrap break-words">{m.text}</p>
                 </div>
               </div>
@@ -72,16 +76,25 @@ export function Conversation({ msgs, side, onSend, placeholder, them, empty, tal
         })}
         {sending && (
           <div className="flex justify-end">
-            <div className="max-w-[82%] bg-primary/70 px-3.5 py-2 text-[15px] leading-[1.4] text-primary-foreground"><p className="whitespace-pre-wrap break-words">{sending}</p></div>
+            <div className={`max-w-[82%] bg-primary/70 px-3.5 py-2 text-[15px] leading-[1.4] text-primary-foreground ${soft ? "rounded-2xl" : ""}`}><p className="whitespace-pre-wrap break-words">{sending}</p></div>
           </div>
         )}
       </div>
       {err && <p key={err} className="a-rise px-1 pb-1 text-sm text-destructive">{err}</p>}
+      {chips && chips.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-3 pt-1 [scrollbar-width:none]">
+          {chips.map((c) => (
+            <button key={c.label} type="button" onClick={c.pick} className="press-sm shrink-0 rounded-full border border-primary px-3.5 py-1.5 text-sm text-primary hover:bg-primary hover:text-primary-foreground">{c.label}</button>
+          ))}
+        </div>
+      )}
       <form onSubmit={(e) => { e.preventDefault(); void send(); }} className="flex items-end gap-2 border-t border-border pt-3">
         <textarea ref={box} rows={1} value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder ?? "Write a message"} aria-label="Message"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-          className="min-h-[44px] flex-1 resize-none border border-border bg-card px-3 py-2.5 text-[15px] leading-[1.4] outline-none focus:border-primary" />
-        <button disabled={!text.trim() || !!sending} className="press h-[44px] bg-primary px-4 font-btn text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground disabled:opacity-40">Send</button>
+          className={`min-h-[44px] flex-1 resize-none border border-border bg-card py-2.5 ${soft ? "rounded-3xl px-4" : "px-3"} text-[15px] leading-[1.4] outline-none focus:border-primary`} />
+        {soft
+          ? <button disabled={!text.trim() || !!sending} aria-label="Send" className="press flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12l16-8-6 17-3-7-7-2z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></button>
+          : <button disabled={!text.trim() || !!sending} className="press h-[44px] bg-primary px-4 font-btn text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground disabled:opacity-40">Send</button>}
       </form>
     </div>
   );
