@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 // Website header, shared by the homepage, the order page and the legal pages.
 const NAV = [
   { label: "Menu", hash: "menu" },
-  { label: "Our Story", hash: "story" },
+  { label: "About", hash: "story", href: "/about" },
   { label: "Visit", hash: "visit" },
 ];
 
@@ -33,7 +33,7 @@ export function Header({ onOrderPage }: { onOrderPage?: boolean }) {
         </a>
         <nav className="hidden items-center gap-10 md:flex">
           {NAV.map((n) => (
-            <a key={n.hash} href={`/#${n.hash}`} onClick={(e) => go(e, n.hash)} className="font-mono text-xs uppercase tracking-[0.1em] text-primary/70 hover:text-primary">{n.label}</a>
+            <a key={n.hash} href={n.href ?? `/#${n.hash}`} onClick={n.href ? undefined : (e) => go(e, n.hash)} className="font-mono text-xs uppercase tracking-[0.1em] text-primary/70 hover:text-primary">{n.label}</a>
           ))}
         </nav>
         <a href="/order" aria-current={onOrderPage ? "page" : undefined}
@@ -56,7 +56,7 @@ export function Header({ onOrderPage }: { onOrderPage?: boolean }) {
       {open && (
         <div className="a-rise flex flex-col gap-5 border-t border-border/60 bg-background px-6 py-6 md:hidden">
           {NAV.map((n) => (
-            <a key={n.hash} href={`/#${n.hash}`} onClick={(e) => go(e, n.hash)} className="font-mono text-sm uppercase tracking-[0.1em] text-primary/80">{n.label}</a>
+            <a key={n.hash} href={n.href ?? `/#${n.hash}`} onClick={n.href ? undefined : (e) => go(e, n.hash)} className="font-mono text-sm uppercase tracking-[0.1em] text-primary/80">{n.label}</a>
           ))}
           <a href="/order" className="text-sm font-mono font-medium uppercase tracking-[0.08em] text-primary">Order for pickup</a>
         </div>

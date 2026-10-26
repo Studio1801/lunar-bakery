@@ -79,10 +79,10 @@ function Home() {
       <main className="flex-grow">
         {/* 01 HERO */}
         <section id="hero" className="w-full">
-          <div className="w-full overflow-hidden" style={{ maxHeight: "33vh", minHeight: 165 }}>
+          <div className="w-full overflow-hidden" style={{ maxHeight: "40vh", minHeight: 198 }}>
             <motion.img initial={{ scale: 1.06, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
               src="/images/hero-natas.jpg" alt="A tray of freshly baked pastel de nata" fetchPriority="high"
-              className="h-full w-full object-cover" style={{ maxHeight: "33vh", minHeight: 165, objectPosition: "center 55%" }} />
+              className="h-full w-full object-cover" style={{ maxHeight: "40vh", minHeight: 198, objectPosition: "center 55%" }} />
           </div>
           <motion.div initial="hidden" animate="visible" variants={stagger} className="flex flex-col items-center px-6 pb-12 pt-8 text-center md:pb-14 md:pt-10">
             <motion.div variants={fadeInUp} className="mb-5 h-[3px] w-16 bg-primary" />
@@ -142,7 +142,7 @@ function Home() {
         </section>
 
         {/* 04 ORDER, live from the shop's own product list */}
-        <OrderSection />
+        <CakeSection />
 
         {/* 05 OUR STORY */}
         <section id="story" className="w-full scroll-mt-16 border-t border-border/40 px-6 py-20 md:py-28">
@@ -164,7 +164,7 @@ function Home() {
                   <div className="w-[3px] shrink-0 self-stretch bg-primary" />
                   <p className="font-serif text-lg italic leading-[1.45] text-primary/80">"My hope is that each bite brings a moment of comfort, joy, and connection."</p>
                 </div>
-                <a href="https://www.lunarbakery.com/about-us" target="_blank" rel="noopener noreferrer" className={`${btnLine} self-start px-8 py-3`}>Read More</a>
+                <a href="/about" className={`${btnLine} self-start px-8 py-3`}>Read More</a>
               </motion.div>
             </motion.div>
           </div>
@@ -235,55 +235,36 @@ function UpcomingDays() {
   );
 }
 
-// The products and prices here come from the dashboard's Products tab, so a price
-// change or a sold-out box shows up on the homepage too.
-function OrderSection() {
-  useCustomerSync();
-  const s = usePublic();
-  const sync = useSyncStatus();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const list = s.products.map((p) => ({ ...p, on: p.sizes.filter((z) => z.on) })).filter((p) => p.on.length);
-  const ready = mounted && sync !== "loading";
+// Custom cake requests. There is no cake database yet, so sending opens the visitor's email
+// with their name and address filled in, addressed to the bakery.
+function CakeSection() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const send = (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = `Hi Lunar,\n\nI'd like to order a custom cake.\n\nName: ${name}\nEmail: ${email}\n`;
+    window.location.href = `mailto:lunarbakerysf@gmail.com?subject=${encodeURIComponent("Custom cake order")}&body=${encodeURIComponent(body)}`;
+  };
+  const field = "block w-full bg-transparent px-6 py-5 text-[17px] text-primary outline-none placeholder:text-muted-foreground focus:bg-secondary/50";
   return (
     <section id="order" className="w-full scroll-mt-16 border-t border-border/40 bg-background px-6 py-20 text-primary md:py-28">
       <div className="mx-auto max-w-[1200px]">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger} className="flex flex-col items-start gap-10 md:flex-row md:gap-16">
-          <motion.div variants={fadeInUp} className="w-full shrink-0 md:w-5/12">
-            <p className="mb-3 font-mono text-xs font-medium uppercase tracking-[0.08em] text-primary/50">04</p>
-            <h2 className="mb-4 font-serif text-4xl tracking-[-0.01em] md:text-5xl">Order for pickup</h2>
-            <p className="mb-8 max-w-sm text-[15px] leading-[1.5] text-primary/70">
-              Choose your boxes, a day and a time. Baked the morning you collect, and we confirm with you directly. Pay when you pick up.
-            </p>
-            <a href="/order" className={`${btn} bg-primary text-primary-foreground hover:bg-primary/90`}>Start an order »</a>
-            <p className="mt-6 text-sm text-primary/60">
-              Custom cake or catering? <a href="mailto:lunarbakerysf@gmail.com?subject=Custom%20cake" className="underline underline-offset-4 hover:text-primary">Email us</a>
-            </p>
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={stagger} className="flex flex-col items-start gap-10 md:flex-row md:items-center md:gap-16">
+          <motion.div variants={fadeInUp} className="w-full md:w-1/2">
+            <div className="aspect-[4/3] overflow-hidden"><img src="/images/gift-box.jpg" alt="A box of pastries with a small decorated cake" loading="lazy" className="h-full w-full object-cover" style={{ objectPosition: "center 58%" }} /></div>
           </motion.div>
-          <motion.div variants={fadeInUp} className="w-full md:w-7/12">
-            {!ready ? (
-              <div className="space-y-px">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-24 bg-primary/5" />)}</div>
-            ) : (
-              <ul className="stagger divide-y divide-primary/15 border-y border-primary/15">
-                {list.map((p) => (
-                  <li key={p.id}>
-                    <a href="/order" className="group flex items-center gap-5 py-4">
-                      {p.photo ? <img src={p.photo} alt="" loading="lazy" className="h-16 w-16 shrink-0 object-cover" /> : <span className="h-16 w-16 shrink-0 bg-primary/10" />}
-                      <span className="flex-1">
-                        <span className="block font-serif text-2xl leading-tight">{p.name}</span>
-                        <span className="text-sm text-primary/60">Boxes of {p.on.map((z) => z.pieces).join(", ")}</span>
-                      </span>
-                      <span className="text-right">
-                        <span className="block font-mono text-[11px] uppercase tracking-[0.1em] text-primary/50">from</span>
-                        <span className="font-serif text-xl">{money(Math.min(...p.on.map((z) => z.price)))}</span>
-                      </span>
-                    </a>
-                  </li>
-                ))}
-                {!list.length && <li className="py-6 text-primary/70">Everything is sold out right now. Follow us on Instagram for the next drop.</li>}
-              </ul>
-            )}
-          </motion.div>
+          <motion.form variants={fadeInUp} onSubmit={send} className="w-full md:w-1/2">
+            <p className={eyebrow}>04</p>
+            <h2 className="mb-4 font-serif text-4xl tracking-[-0.01em] md:text-5xl">Order Cakes</h2>
+            <p className="mb-8 max-w-md text-[15px] leading-[1.6] text-primary/70">
+              Now accepting custom cake orders for October & November 2026. Fill out your details and we'll be in touch to discuss your order.
+            </p>
+            <div className="mb-8 divide-y divide-border border border-border">
+              <input required aria-label="Your name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={field} />
+              <input required type="email" aria-label="Email address" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" className={field} />
+            </div>
+            <button type="submit" className={btnSolid}>Order cake</button>
+          </motion.form>
         </motion.div>
       </div>
     </section>

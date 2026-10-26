@@ -16,11 +16,12 @@ export function Footer({ compact }: { compact?: boolean }) {
           <div className="flex flex-col gap-3">
             <h4 className="mb-1 text-xs font-mono font-medium uppercase tracking-[0.08em] text-primary-foreground/50">Order</h4>
             <a href="/order" className={link}>Order for pickup</a>
-            <a href="mailto:lunarbakerysf@gmail.com?subject=Custom%20cake" className={link}>Custom cakes</a>
+            <a href="/#order" className={link}>Custom cakes</a>
             <a href="mailto:lunarbakerysf@gmail.com?subject=Catering" className={link}>Catering</a>
           </div>
           <div className="flex flex-col gap-3">
             <h4 className="mb-1 text-xs font-mono font-medium uppercase tracking-[0.08em] text-primary-foreground/50">Connect</h4>
+            <a href="/about" className={link}>About</a>
             <a href={IG} target="_blank" rel="noopener noreferrer" className={link}>Instagram</a>
             <a href="mailto:lunarbakerysf@gmail.com" className={link}>Email us</a>
           </div>

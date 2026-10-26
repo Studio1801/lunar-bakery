@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as OrderRouteImport } from './routes/order'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -21,6 +22,11 @@ import { Route as OIdRouteImport } from './routes/o.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -61,6 +67,7 @@ const OIdRoute = OIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
   '/order': typeof OrderRoute
   '/privacy': typeof PrivacyRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
   '/order': typeof OrderRoute
   '/privacy': typeof PrivacyRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
   '/order': typeof OrderRoute
   '/privacy': typeof PrivacyRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/dashboard'
     | '/order'
     | '/privacy'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/dashboard'
     | '/order'
     | '/privacy'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/dashboard'
     | '/order'
     | '/privacy'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   DashboardRoute: typeof DashboardRoute
   OrderRoute: typeof OrderRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -197,6 +217,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   DashboardRoute: DashboardRoute,
   OrderRoute: OrderRoute,
   PrivacyRoute: PrivacyRoute,
