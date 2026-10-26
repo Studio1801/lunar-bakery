@@ -21,7 +21,29 @@ var VIEWS = {
   Messages: ["when", "customer", "phone", "from", "message"]
 };
 
-function setup() { tabs_(); }
+function setup() {
+  tabs_();
+  // Rebuild the readable tabs once a minute, off to the side, so saving stays fast.
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === "refreshViews") ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger("refreshViews").timeBased().everyMinutes(1).create();
+  refreshViews();
+}
+
+function readState_(st) {
+  var n = st.getLastRow() - 2;
+  if (n < 1) return null;
+  return JSON.parse(st.getRange(3, 1, n, 1).getValues().map(function (r) { return r[0]; }).join(""));
+}
+
+function refreshViews() {
+  var props = PropertiesService.getScriptProperties();
+  var st = tabs_();
+  var version = Number(st.getRange("B1").getValue()) || 0;
+  if (!version || String(version) === props.getProperty("VIEWS_V")) return;
+  var state = readState_(st);
+  if (state) views_(state);
+  props.setProperty("VIEWS_V", String(version));
+}
 
 function sheet_(n) {
   var ss = SpreadsheetApp.getActive();
@@ -55,24 +77,22 @@ function doPost(e) {
     var secret = PropertiesService.getScriptProperties().getProperty("LUNAR_SECRET");
     if (!secret || body.key !== secret) return out_({ error: "forbidden" });
     lock.waitLock(20000);
-    var st = tabs_();
+    var st = SpreadsheetApp.getActive().getSheetByName(STATE) || tabs_();
     var version = Number(st.getRange("B1").getValue()) || 0;
     if (body.action === "version") return out_({ version: version });
     if (body.action === "load") {
-      var n = st.getLastRow() - 2;
-      if (version === 0 || n < 1) return out_({ version: 0, state: null });
-      var parts = st.getRange(3, 1, n, 1).getValues().map(function (r) { return r[0]; });
-      return out_({ version: version, state: JSON.parse(parts.join("")) });
+      if (version === 0) return out_({ version: 0, state: null });
+      return out_({ version: version, state: readState_(st) });
     }
     if (body.action === "save") {
       if (Number(body.expected) !== version) return out_({ conflict: true, version: version });
       var json = JSON.stringify(body.state);
       var rows = [];
       for (var i = 0; i < json.length; i += CHUNK) rows.push([json.substr(i, CHUNK)]);
-      if (st.getLastRow() > 2) st.getRange(3, 1, st.getLastRow() - 2, 1).clearContent();
-      st.getRange(3, 1, rows.length, 1).setNumberFormat("@").setValues(rows);
+      var old = st.getLastRow() - 2;
+      st.getRange(3, 1, rows.length, 1).setValues(rows);
+      if (old > rows.length) st.getRange(3 + rows.length, 1, old - rows.length, 1).clearContent();
       st.getRange("B1").setValue(version + 1);
-      try { views_(body.state); } catch (err) { console.error("views failed: " + err); }
       return out_({ ok: true, version: version + 1 });
     }
     return out_({ error: "unknown action" });

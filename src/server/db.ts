@@ -1,7 +1,7 @@
 import pg from "pg";
 import { applyOp, type Op } from "@/lib/ops";
 import { seed, type State } from "@/lib/store";
-import { sheetLoad, sheetSave, sheetVersion, sheetsEnabled } from "./sheets";
+import { sheetLoad, sheetSave, sheetsEnabled } from "./sheets";
 
 /*
  * The shop's shared data, kept as one row in Postgres.
@@ -49,7 +49,7 @@ export async function readStore(): Promise<{ state: State; version: number }> {
   return { version: Number(r.rows[0].version), state: r.rows[0].state as State };
 }
 export async function readVersion(): Promise<number> {
-  if (sheetsEnabled()) return sheetVersion();
+  if (sheetsEnabled()) return sheetCheck();
   await setup();
   const r = await getPool().query(`SELECT version FROM lunar_store WHERE id = 1`);
   return Number(r.rows[0].version);
@@ -80,33 +80,43 @@ export async function mutate(fn: (s: State) => { state: State } | { error: strin
 export const writeOp = (op: Op) => mutate((s) => applyOp(s, op));
 
 // ---- Google Sheet backend ----
-// Sheets calls take a second or two, and every open page polls. Reads are shared for a moment
-// so a busy day does not hammer the sheet; writes always go through a fresh read.
-let cache: { at: number; value: { state: State; version: number } } | null = null;
-let inflight: Promise<{ state: State; version: number }> | null = null;
-const FRESH = 1500;
+// Every Sheets call costs a second or two, so the server remembers the last copy it saw.
+// Reads inside the window are free. A save sends the version it started from, so if another
+// server saved first the sheet says so and we redo the change on top of theirs.
+type Snap = { state: State; version: number };
+let cache: { at: number; value: Snap } | null = null;
+let inflight: Promise<Snap> | null = null;
+const FRESH = 2500; // how long a copy counts as current for reading
+const BASE = 15000; // how long a copy is trusted as the starting point for a save
 
-async function sheetFetch(): Promise<{ state: State; version: number }> {
-  const r = await sheetLoad();
-  if (r.state && r.version > 0) {
-    // Older saves carried a separate seasonal menu. Products now say which seasons they are on.
-    const { menu: _m, season: _s, ...state } = r.state as State & { menu?: unknown; season?: unknown };
-    return { state, version: r.version };
-  }
+function strip(r: { state: State | null; version: number }): Snap | null {
+  if (!r.state || r.version <= 0) return null;
+  // Older saves carried a separate seasonal menu. Products now say which seasons they are on.
+  const { menu: _m, season: _s, ...state } = r.state as State & { menu?: unknown; season?: unknown };
+  return { state, version: r.version };
+}
+async function sheetFetch(): Promise<Snap> {
+  const got = strip(await sheetLoad());
+  if (got) return got;
   // First run: put the starting shop into the sheet.
   const first = seed(true);
   const w = await sheetSave(0, first);
   if (w.ok) return { state: first, version: w.version };
   return sheetFetch();
 }
-async function sheetRead() {
-  if (cache && Date.now() - cache.at < FRESH) return cache.value;
+function sheetRead(): Promise<Snap> {
+  if (cache && Date.now() - cache.at < FRESH) return Promise.resolve(cache.value);
   inflight ??= sheetFetch().then((v) => { cache = { at: Date.now(), value: v }; return v; }).finally(() => { inflight = null; });
   return inflight;
 }
+async function sheetCheck(): Promise<number> {
+  if (cache && Date.now() - cache.at < FRESH) return cache.value.version;
+  return (await sheetRead()).version;
+}
 async function sheetMutate(fn: (s: State) => { state: State } | { error: string }): Promise<{ state: State; version: number; error?: string }> {
   for (let tries = 0; tries < 5; tries++) {
-    const cur = await sheetFetch();
+    // Usually one trip to the sheet: start from the copy we already have.
+    const cur = cache && tries === 0 && Date.now() - cache.at < BASE ? cache.value : await sheetFetch();
     const res = fn(cur.state);
     if ("error" in res) return { ...cur, error: res.error };
     if (res.state === cur.state) return cur;
