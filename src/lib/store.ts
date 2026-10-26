@@ -25,9 +25,28 @@ export type Order = {
 export type Msg = { id: string; from: "customer" | "bakery"; text: string; at: number };
 export type Thread = { id: string; token: string; name: string; phone?: string | undefined; orderId?: string | undefined; msgs: Msg[]; staffSeen: number; custSeen: number; at: number };
 export type DayInfo = { place?: string | undefined; from?: number | undefined; to?: number | undefined };
-export type State = { products: Product[]; orders: Order[]; done: Record<string, boolean>; closed: Record<string, boolean>; days?: Record<string, DayInfo>; threads?: Record<string, Thread> };
+export type Season = "spring" | "summer" | "fall" | "winter";
+export const SEASONS: { key: Season; label: string }[] = [
+  { key: "spring", label: "Spring" },
+  { key: "summer", label: "Summer" },
+  { key: "fall", label: "Fall" },
+  { key: "winter", label: "Winter" },
+];
+/** One thing on a season's homepage menu. Price is shown as written, like "$6". */
+export type MenuItem = { id: string; name: string; price: string; photo?: string | undefined };
+export type Menu = Record<Season, MenuItem[]>;
+const mi = (season: string, n: number, name: string, price: string, photo: string): MenuItem => ({ id: `${season}-${n}`, name, price, photo });
+export const DEFAULT_MENU: Menu = {
+  spring: [mi("spring", 1, "Strawberry Mochi Tart", "$7", "/images/gift-box.jpg"), mi("spring", 2, "Matcha Croissant", "$6", "/images/natas-kouigns.jpg"), mi("spring", 3, "Cherry Blossom Financier", "$5", "/images/kouign-tray.jpg"), mi("spring", 4, "Earl Grey Kouign-Amann", "$8", "/images/kouign-gold.jpg")],
+  summer: [mi("summer", 1, "Pastel de Nata", "$6", "/images/hero-natas.jpg"), mi("summer", 2, "Kouign-Amann", "$7", "/images/kouign-tray.jpg"), mi("summer", 3, "Natas & Kouigns", "$6", "/images/natas-kouigns.jpg"), mi("summer", 4, "Kouign with Gold", "$8", "/images/kouign-gold.jpg")],
+  fall: [mi("fall", 1, "Taro Puff", "$6", "/images/natas-kouigns.jpg"), mi("fall", 2, "Osmanthus Madeleine", "$5", "/images/kouign-gold.jpg"), mi("fall", 3, "Chestnut Mont Blanc", "$9", "/images/gift-box.jpg"), mi("fall", 4, "Black Sesame Kouign-Amann", "$8", "/images/kouign-tray.jpg")],
+  winter: [mi("winter", 1, "Tangerine Cake", "$7", "/images/gift-box.jpg"), mi("winter", 2, "Red Bean Danish", "$6", "/images/kouign-tray.jpg"), mi("winter", 3, "Longan Bun", "$5", "/images/natas-kouigns.jpg"), mi("winter", 4, "Yuja Éclair", "$7", "/images/kouign-gold.jpg")],
+};
+export const menuOf = (s: { menu?: Menu | undefined }): Menu => s.menu ?? DEFAULT_MENU;
+export const seasonOf = (s: { season?: Season | undefined }): Season => s.season ?? "summer";
+export type State = { products: Product[]; orders: Order[]; done: Record<string, boolean>; closed: Record<string, boolean>; days?: Record<string, DayInfo>; threads?: Record<string, Thread>; menu?: Menu; season?: Season };
 /** What anyone may see: the menu, open days, pop-up places and how full each day is. Never names or phone numbers. */
-export type PublicView = { products: Product[]; closed: Record<string, boolean>; days: Record<string, DayInfo>; load: Record<string, number> };
+export type PublicView = { products: Product[]; closed: Record<string, boolean>; days: Record<string, DayInfo>; load: Record<string, number>; menu: Menu; season: Season };
 /** What one customer may see: only their own orders and conversations. */
 export type MineOrder = Order & { picked: boolean };
 export type Mine = { orders: MineOrder[]; threads: Thread[] };

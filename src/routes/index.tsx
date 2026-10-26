@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, type Variants } from "framer-motion";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { DAILY_LIMIT, dayHours, fmtTime, iso, money, parse, useCustomerSync, usePublic, useSyncStatus } from "@/lib/store";
+import { DAILY_LIMIT, SEASONS, dayHours, fmtTime, iso, money, parse, useCustomerSync, usePublic, useSyncStatus, type Season } from "@/lib/store";
 import { ChatBubble } from "@/components/site/ChatBubble";
 
 export const Route = createFileRoute("/")({
@@ -24,39 +24,6 @@ export const Route = createFileRoute("/")({
 const fadeInUp: Variants = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } } };
 const stagger: Variants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.12 } } };
 
-type Season = "spring" | "summer" | "fall" | "winter";
-const SEASONS: { key: Season; label: string }[] = [
-  { key: "spring", label: "Spring" },
-  { key: "summer", label: "Summer" },
-  { key: "fall", label: "Fall" },
-  { key: "winter", label: "Winter" },
-];
-const MENU: Record<Season, { name: string; price: string; img: string }[]> = {
-  spring: [
-    { name: "Strawberry Mochi Tart", price: "$7", img: "/images/gift-box.jpg" },
-    { name: "Matcha Croissant", price: "$6", img: "/images/natas-kouigns.jpg" },
-    { name: "Cherry Blossom Financier", price: "$5", img: "/images/kouign-tray.jpg" },
-    { name: "Earl Grey Kouign-Amann", price: "$8", img: "/images/kouign-gold.jpg" },
-  ],
-  summer: [
-    { name: "Pastel de Nata", price: "$6", img: "/images/hero-natas.jpg" },
-    { name: "Kouign-Amann", price: "$7", img: "/images/kouign-tray.jpg" },
-    { name: "Natas & Kouigns", price: "$6", img: "/images/natas-kouigns.jpg" },
-    { name: "Kouign with Gold", price: "$8", img: "/images/kouign-gold.jpg" },
-  ],
-  fall: [
-    { name: "Taro Puff", price: "$6", img: "/images/natas-kouigns.jpg" },
-    { name: "Osmanthus Madeleine", price: "$5", img: "/images/kouign-gold.jpg" },
-    { name: "Chestnut Mont Blanc", price: "$9", img: "/images/gift-box.jpg" },
-    { name: "Black Sesame Kouign-Amann", price: "$8", img: "/images/kouign-tray.jpg" },
-  ],
-  winter: [
-    { name: "Tangerine Cake", price: "$7", img: "/images/gift-box.jpg" },
-    { name: "Red Bean Danish", price: "$6", img: "/images/kouign-tray.jpg" },
-    { name: "Longan Bun", price: "$5", img: "/images/natas-kouigns.jpg" },
-    { name: "Yuja Éclair", price: "$7", img: "/images/kouign-gold.jpg" },
-  ],
-};
 const MAP = "https://maps.google.com/?q=2948+Folsom+St,+San+Francisco,+CA+94110";
 const IG = "https://www.instagram.com/lunarbakerysf/";
 
@@ -66,7 +33,10 @@ const btnLine = `${btn} border border-primary text-primary hover:bg-primary hove
 const eyebrow = "mb-3 text-xs font-mono font-medium uppercase tracking-[0.08em] text-accent";
 
 function Home() {
-  const [season, setSeason] = useState<Season>("summer");
+  useCustomerSync();
+  const pub = usePublic();
+  const [picked, setPicked] = useState<Season | null>(null);
+  const season: Season = picked ?? pub.season;
   // Arriving from another page with a #section link: glide to it once the page has drawn.
   useEffect(() => {
     const h = window.location.hash.slice(1);
@@ -119,7 +89,7 @@ function Home() {
               <h2 className="mb-8 font-serif text-4xl tracking-[-0.01em] md:text-5xl">This Season's Menu</h2>
               <div className="flex flex-wrap" role="tablist">
                 {SEASONS.map(({ key, label }) => (
-                  <button key={key} role="tab" aria-selected={season === key} onClick={() => setSeason(key)}
+                  <button key={key} role="tab" aria-selected={season === key} onClick={() => setPicked(key)}
                     className={`press border px-6 py-2 text-sm font-btn font-bold uppercase tracking-[0.12em] ${season === key ? "border-primary bg-primary text-primary-foreground" : "border-primary/30 text-primary hover:border-primary"}`}>
                     {label}
                   </button>
@@ -127,11 +97,11 @@ function Home() {
               </div>
             </motion.div>
             <motion.div key={season} initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {MENU[season].map((item) => (
-                <motion.div key={item.name} variants={fadeInUp} className="group flex flex-col">
+              {pub.menu[season].filter((item) => item.name.trim()).map((item) => (
+                <motion.div key={item.id} variants={fadeInUp} className="group flex flex-col">
                   <div className="relative aspect-square overflow-hidden bg-muted">
-                    <img src={item.img} alt={item.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    <span className="absolute bottom-3 right-3 border border-border/60 bg-background px-2 py-1 text-xs font-semibold tracking-wide">{item.price}</span>
+                    {item.photo && <img src={item.photo} alt={item.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />}
+                    {item.price && <span className="absolute bottom-3 right-3 border border-border/60 bg-background px-2 py-1 text-xs font-semibold tracking-wide">{item.price}</span>}
                   </div>
                   <p className="mt-3 text-sm leading-snug">{item.name}</p>
                 </motion.div>
