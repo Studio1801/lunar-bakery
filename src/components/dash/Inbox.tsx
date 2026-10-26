@@ -20,6 +20,9 @@ export function Inbox() {
   const s = useStore();
   const threads = Object.values(s.threads ?? {}).sort((a, b) => b.at - a.at);
   const [sel, setSel] = useState<string | null>(null);
+  const [sure, setSure] = useState(false);
+  useEffect(() => { setSure(false); }, [sel]);
+  useEffect(() => { if (!sure) return; const t = setTimeout(() => setSure(false), 3000); return () => clearTimeout(t); }, [sure]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((n) => n + 1), 30000); return () => clearInterval(t); }, []);
@@ -85,6 +88,10 @@ export function Inbox() {
                   {cur.phone ? <><a href={`tel:${cur.phone}`} className="underline underline-offset-4 hover:text-foreground">{cur.phone}</a> · <a href={`sms:${cur.phone}`} className="underline underline-offset-4 hover:text-foreground">Text</a></> : "No phone number"}
                 </p>
               </div>
+              <button
+                onClick={() => { if (!sure) return setSure(true); setSel(null); void dispatch({ t: "rmthread", thread: cur.id }); }}
+                className={`press self-start px-3 py-2 text-sm ${sure ? "bg-destructive font-semibold text-destructive-foreground" : "text-muted-foreground underline underline-offset-4 hover:text-foreground"}`}
+              >{sure ? "Tap again to delete" : "Delete conversation"}</button>
               {order && (
                 <button onClick={() => openOrder(order.id)} className="press border border-primary px-3 py-2 text-left hover:bg-secondary">
                   <span className="block font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">{st === "pending" ? "Needs confirming" : st}</span>

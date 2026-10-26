@@ -17,7 +17,8 @@ export type Op =
   | { t: "reply"; thread: string; text: string }
   | { t: "seen"; thread: string }
   | { t: "day"; date: string; info: DayInfo }
-  | { t: "drops"; drops: Drop[] };
+  | { t: "drops"; drops: Drop[] }
+  | { t: "rmthread"; thread: string };
 
 const SEASON_KEYS: Season[] = ["spring", "summer", "fall", "winter"];
 export type Result = { state: State } | { error: string };
@@ -106,6 +107,11 @@ export function applyOp(s: State, op: Op): Result {
       if (!th || th.staffSeen === th.msgs.length) return { state: s };
       return { state: { ...s, threads: { ...s.threads, [th.id]: { ...th, staffSeen: th.msgs.length } } } };
     }
+    case "rmthread": {
+      if (!s.threads?.[op.thread]) return { state: s };
+      const { [op.thread]: _gone, ...rest } = s.threads;
+      return { state: { ...s, threads: rest } };
+    }
     case "drops": return { state: { ...s, drops: cleanDrops(op.drops) } };
     case "day": {
       const days = { ...(s.days ?? {}) };
@@ -131,6 +137,7 @@ export function isOp(x: unknown): x is Op {
     case "status": return typeof o.id === "string" && ["confirm", "ready", "decline", "unready"].includes(o.s as string);
     case "reply": return typeof o.thread === "string" && typeof o.text === "string";
     case "drops": return Array.isArray((o as { drops?: unknown }).drops) && ((o as { drops: unknown[] }).drops).length <= 24;
+    case "rmthread": return typeof o.thread === "string";
     case "seen": return typeof o.thread === "string";
     case "day": return typeof o.date === "string" && !!o.info && typeof o.info === "object";
     default: return false;
