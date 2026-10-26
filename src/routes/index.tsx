@@ -6,6 +6,43 @@ import { Footer } from "@/components/site/Footer";
 import { DAILY_LIMIT, SEASONS, dayHours, fromLine, inSeason, seasonNow, fmtTime, iso, money, parse, useCustomerSync, usePublic, useSyncStatus, type Season } from "@/lib/store";
 import { ChatBubble } from "@/components/site/ChatBubble";
 
+function NextDrop() {
+  const pub = usePublic();
+  const today = iso(new Date());
+  const list = (pub.drops ?? []).filter((d) => d.date >= today);
+  const [first, ...rest] = list;
+  if (!first) return null;
+  const day = (d: string, o: Intl.DateTimeFormatOptions) => parse(d).toLocaleDateString("en-US", o);
+  const hours = (d: { from?: number | undefined; to?: number | undefined }) => (d.from !== undefined && d.to !== undefined ? `${fmtTime(d.from)} to ${fmtTime(d.to)}` : d.from !== undefined ? `From ${fmtTime(d.from)}` : "");
+  const soon = first.date === today ? "Today" : "Next drop";
+  return (
+    <section id="drop" className="w-full scroll-mt-16 bg-primary px-6 py-14 text-primary-foreground md:py-20">
+      <div className="mx-auto grid max-w-[1200px] gap-10 md:grid-cols-[1.4fr_1fr] md:items-end">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeInUp}>
+          <p className="mb-3 text-sm font-btn font-bold tracking-[0.12em] text-accent">{soon}</p>
+          <h2 className="font-serif text-4xl leading-tight tracking-[-0.01em] md:text-6xl">{day(first.date, { weekday: "long" })}, {day(first.date, { month: "long", day: "numeric" })}</h2>
+          <p className="mt-4 text-xl md:text-2xl">{first.place || "Location coming soon"}</p>
+          {hours(first) && <p className="mt-1 text-lg opacity-80">{hours(first)}</p>}
+          {first.note && <p className="mt-5 max-w-xl opacity-80">{first.note}</p>}
+        </motion.div>
+        {rest.length > 0 && (
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeInUp}>
+            <p className="mb-3 text-sm font-btn font-bold tracking-[0.12em] opacity-70">After that</p>
+            <ul className="divide-y divide-primary-foreground/20">
+              {rest.slice(0, 4).map((d) => (
+                <li key={d.id} className="py-3">
+                  <span className="font-serif text-xl">{day(d.date, { weekday: "short", month: "short", day: "numeric" })}</span>
+                  <span className="block text-sm opacity-80">{[d.place, hours(d)].filter(Boolean).join(", ")}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -80,6 +117,8 @@ function Home() {
             </span>
           </div>
         </section>
+
+        <NextDrop />
 
         {/* 03 THIS SEASON */}
         <section id="menu" className="w-full scroll-mt-16 px-6 py-20 md:py-28">

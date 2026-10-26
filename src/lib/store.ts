@@ -25,6 +25,23 @@ export type Order = {
 export type Msg = { id: string; from: "customer" | "bakery"; text: string; at: number };
 export type Thread = { id: string; token: string; name: string; phone?: string | undefined; orderId?: string | undefined; msgs: Msg[]; staffSeen: number; custSeen: number; at: number };
 export type DayInfo = { place?: string | undefined; from?: number | undefined; to?: number | undefined };
+/** A pop-up or market date the bakery announces on the website. */
+export type Drop = { id: string; date: string; place: string; from?: number | undefined; to?: number | undefined; note?: string | undefined };
+/** Trim, cap and sort drops so the sheet, the dashboard and the website all agree. */
+export function cleanDrops(list: unknown): Drop[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: Drop[] = [];
+  for (const d of list.slice(0, 24) as Partial<Drop>[]) {
+    if (!d || typeof d.id !== "string" || seen.has(d.id) || typeof d.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d.date)) continue;
+    seen.add(d.id);
+    const from = typeof d.from === "number" ? d.from : undefined;
+    const to = typeof d.to === "number" ? d.to : undefined;
+    const ok = from === undefined || to === undefined || from < to;
+    out.push({ id: d.id.slice(0, 40), date: d.date, place: String(d.place ?? "").trim().slice(0, 120), from: ok ? from : undefined, to: ok ? to : undefined, note: String(d.note ?? "").trim().slice(0, 240) || undefined });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
 export type Season = "spring" | "summer" | "fall" | "winter";
 export const SEASONS: { key: Season; label: string }[] = [
   { key: "spring", label: "Spring" },
@@ -37,9 +54,9 @@ export const seasonNow = (d: Date = new Date()): Season => { const m = d.getMont
 export const inSeason = (p: Product, season: Season) => !p.seasons || p.seasons.includes(season);
 /** The line under a product on the homepage: its first size that is on sale, like "6 for $30". */
 export const fromLine = (p: Product) => { const z = p.sizes.find((x) => x.on); return z ? `${z.pieces} for $${z.price}` : ""; };
-export type State = { products: Product[]; orders: Order[]; done: Record<string, boolean>; closed: Record<string, boolean>; days?: Record<string, DayInfo>; threads?: Record<string, Thread> };
+export type State = { products: Product[]; orders: Order[]; done: Record<string, boolean>; closed: Record<string, boolean>; days?: Record<string, DayInfo>; threads?: Record<string, Thread>; drops?: Drop[] };
 /** What anyone may see: the menu, open days, pop-up places and how full each day is. Never names or phone numbers. */
-export type PublicView = { products: Product[]; closed: Record<string, boolean>; days: Record<string, DayInfo>; load: Record<string, number> };
+export type PublicView = { products: Product[]; closed: Record<string, boolean>; days: Record<string, DayInfo>; drops: Drop[]; load: Record<string, number> };
 /** What one customer may see: only their own orders and conversations. */
 export type MineOrder = Order & { picked: boolean };
 export type Mine = { orders: MineOrder[]; threads: Thread[] };

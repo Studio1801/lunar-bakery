@@ -1,4 +1,4 @@
-import { DAILY_LIMIT, type Season, fmtTime, isLive, orderPieces, parse, sizeIndex, uid, type DayInfo, type Order, type Product, type State, type Thread } from "./store";
+import { cleanDrops, DAILY_LIMIT, type Season, fmtTime, isLive, orderPieces, parse, sizeIndex, uid, type DayInfo, type Drop, type Order, type Product, type State, type Thread } from "./store";
 
 /*
  * Every change the bakery makes is one of these small "operations".
@@ -16,7 +16,8 @@ export type Op =
   | { t: "status"; id: string; s: "confirm" | "ready" | "decline" | "unready"; reason?: string }
   | { t: "reply"; thread: string; text: string }
   | { t: "seen"; thread: string }
-  | { t: "day"; date: string; info: DayInfo };
+  | { t: "day"; date: string; info: DayInfo }
+  | { t: "drops"; drops: Drop[] };
 
 const SEASON_KEYS: Season[] = ["spring", "summer", "fall", "winter"];
 export type Result = { state: State } | { error: string };
@@ -105,6 +106,7 @@ export function applyOp(s: State, op: Op): Result {
       if (!th || th.staffSeen === th.msgs.length) return { state: s };
       return { state: { ...s, threads: { ...s.threads, [th.id]: { ...th, staffSeen: th.msgs.length } } } };
     }
+    case "drops": return { state: { ...s, drops: cleanDrops(op.drops) } };
     case "day": {
       const days = { ...(s.days ?? {}) };
       const info: DayInfo = { place: op.info.place?.slice(0, 120) || undefined, from: op.info.from, to: op.info.to };
@@ -128,6 +130,7 @@ export function isOp(x: unknown): x is Op {
     case "products": return Array.isArray(o.products) && o.products.length <= 60;
     case "status": return typeof o.id === "string" && ["confirm", "ready", "decline", "unready"].includes(o.s as string);
     case "reply": return typeof o.thread === "string" && typeof o.text === "string";
+    case "drops": return Array.isArray((o as { drops?: unknown }).drops) && ((o as { drops: unknown[] }).drops).length <= 24;
     case "seen": return typeof o.thread === "string";
     case "day": return typeof o.date === "string" && !!o.info && typeof o.info === "object";
     default: return false;

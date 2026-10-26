@@ -18,6 +18,7 @@ var VIEWS = {
   Products: ["code", "name", "pieces", "price", "on", "seasons"],
   Closed: ["date"],
   Days: ["date", "place", "from", "to"],
+  Drops: ["date", "place", "from", "to", "note"],
   Messages: ["when", "customer", "phone", "from", "message"]
 };
 
@@ -106,7 +107,7 @@ function doPost(e) {
 function hm_(m) { if (m == null) return ""; var h = Math.floor(m / 60); return (h % 12 || 12) + ":" + ("0" + (m % 60)).slice(-2) + (h < 12 ? " am" : " pm"); }
 
 // Closed, Days and Messages only exist while they have something in them.
-var OPTIONAL = { Closed: 1, Days: 1, Messages: 1 };
+var OPTIONAL = { Closed: 1, Days: 1, Drops: 1, Messages: 1 };
 function put_(name, rows) {
   var ss = SpreadsheetApp.getActive(), w = VIEWS[name].length;
   if (OPTIONAL[name] && !rows.length) { var gone = ss.getSheetByName(name); if (gone) ss.deleteSheet(gone); return; }
@@ -132,6 +133,7 @@ function views_(s) {
   }));
   put_("Closed", Object.keys(s.closed || {}).filter(function (d) { return s.closed[d]; }).sort().map(function (d) { return [d]; }));
   put_("Days", Object.keys(s.days || {}).sort().map(function (d) { var x = s.days[d]; return [d, x.place || "", hm_(x.from), hm_(x.to)]; }));
+  put_("Drops", (s.drops || []).slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).map(function (d) { return [d.date, d.place || "", hm_(d.from), hm_(d.to), d.note || ""]; }));
   var msgs = [];
   Object.keys(s.threads || {}).forEach(function (id) {
     var t = s.threads[id];
