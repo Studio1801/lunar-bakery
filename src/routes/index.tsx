@@ -6,6 +6,14 @@ import { Footer } from "@/components/site/Footer";
 import { DAILY_LIMIT, SEASONS, dayHours, fromLine, inSeason, seasonNow, fmtTime, iso, money, parse, useCustomerSync, usePublic, useSyncStatus, type Season } from "@/lib/store";
 import { ChatBubble } from "@/components/site/ChatBubble";
 
+const maps = (q: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+function Pin({ small }: { small?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={`shrink-0 text-[#9a8236] ${small ? "h-4 w-4" : "h-6 w-6"}`} fill="currentColor">
+      <path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
+    </svg>
+  );
+}
 function NextDrop() {
   const pub = usePublic();
   const today = iso(new Date());
@@ -21,7 +29,10 @@ function NextDrop() {
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeInUp}>
           <p className="mb-3 text-sm font-btn font-bold tracking-[0.12em] text-[#9a8236]">{soon}</p>
           <h2 className="font-serif text-4xl leading-tight tracking-[-0.01em] md:text-6xl">{day(first.date, { weekday: "long" })}, {day(first.date, { month: "long", day: "numeric" })}</h2>
-          <p className="mt-4 text-xl md:text-2xl">{first.place || "Location coming soon"}</p>
+          <p className="mt-4 flex items-center gap-2 text-xl md:text-2xl">
+            <Pin />
+            {first.place ? <a href={maps(first.place)} target="_blank" rel="noreferrer" className="underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary">{first.place}</a> : "Location coming soon"}
+          </p>
           {hours(first) && <p className="mt-1 text-lg opacity-80">{hours(first)}</p>}
           {first.note && <p className="mt-5 max-w-xl opacity-80">{first.note}</p>}
         </motion.div>
@@ -32,7 +43,7 @@ function NextDrop() {
               {rest.slice(0, 4).map((d) => (
                 <li key={d.id} className="py-3">
                   <span className="font-serif text-xl">{day(d.date, { weekday: "short", month: "short", day: "numeric" })}</span>
-                  <span className="block text-sm opacity-80">{[d.place, hours(d)].filter(Boolean).join(", ")}</span>
+                  <span className="mt-0.5 flex items-center gap-1.5 text-sm opacity-80"><Pin small />{[d.place, hours(d)].filter(Boolean).join(", ")}</span>
                 </li>
               ))}
             </ul>
