@@ -291,3 +291,13 @@
 .ent.gone .body { opacity: .5; }
 .ent.gone .strike { text-decoration: line-through; text-decoration-thickness: 1px; }
 .soon-dot { animation: l-dot 2s ease-out infinite; }
+
+/* Heartbeat for the "new order" notice: two quick beats, then a rest. */
+@keyframes heartbeat {
+  0%, 36%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgb(192 161 82 / 0); }
+  8% { transform: scale(1.012); box-shadow: 0 0 0 6px rgb(192 161 82 / 0.28); }
+  16% { transform: scale(1); box-shadow: 0 0 0 0 rgb(192 161 82 / 0); }
+  24% { transform: scale(1.008); box-shadow: 0 0 0 4px rgb(192 161 82 / 0.2); }
+}
+.heartbeat { animation: heartbeat 2.4s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .heartbeat { animation: none; } }

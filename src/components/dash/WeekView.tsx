@@ -70,13 +70,13 @@ export function WeekView({ numbersOpen, setNumbersOpen, onMessages }: { numbersO
   return (
     <>
       {(pending.length > 0 || unreadAll > 0) && (
-        <div role="status" className="a-rise mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 bg-primary px-5 py-3.5 text-primary-foreground">
+        <div role="status" className={`a-rise mb-5 flex flex-wrap items-center gap-x-5 gap-y-2 px-5 py-3.5 ${pending.length > 0 ? "heartbeat bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}>
           {pending.length > 0 && (
             <button onClick={() => { const o = pending[0]!; setWeek(weekOf(o.date)); setSel(o.date); }} className="press text-left font-serif text-lg">
               {pending.length} new online order{pending.length > 1 ? "s" : ""} to confirm <span className="underline underline-offset-4">Show me</span>
             </button>
           )}
-          {unreadAll > 0 && <button onClick={onMessages} className="press ml-auto bg-primary-foreground px-4 py-2 font-btn text-xs font-bold tracking-[0.12em] text-primary">{unreadAll} new message{unreadAll > 1 ? "s" : ""}</button>}
+          {unreadAll > 0 && <button onClick={onMessages} className={`press ml-auto px-4 py-2 font-btn text-xs font-bold tracking-[0.12em] ${pending.length > 0 ? "bg-primary text-primary-foreground" : "bg-primary-foreground text-primary"}`}>{unreadAll} new message{unreadAll > 1 ? "s" : ""}</button>}
         </div>
       )}
 
